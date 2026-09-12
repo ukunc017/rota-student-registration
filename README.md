@@ -21,7 +21,7 @@ Storage) ile yazıldı, framework/build adımı yok.
    ```bash
    cp js/config.example.js js/config.js
    ```
-   `js/config.js` `.gitignore`'dadır, commit'lenmez.
+   `js/config.js` bilerek commit'lenir (bkz. Güvenlik notları).
 4. **Siteyi çalıştırın:**
    ```bash
    npm install
@@ -58,6 +58,15 @@ Storage) ile yazıldı, framework/build adımı yok.
 - Herkese açık bir admin kayıt formu yoktur; ilk admin yukarıdaki adımla
   manuel oluşturulur, sonraki adminler mevcut bir admin tarafından aynı SQL
   ile eklenebilir.
+
+## Yayına alma (Vercel)
+
+1. [vercel.com](https://vercel.com) hesabınıza GitHub ile giriş yapın.
+2. **Add New... > Project** ile bu GitHub reposunu (`rota-student-registration`)
+   import edin. Framework/build ayarı gerekmez, statik site olarak algılanır.
+3. **Deploy**'a basın — birkaç saniye içinde `https://<proje-adi>.vercel.app`
+   adresinde canlıya alınır.
+4. Sonraki her `git push`, otomatik olarak yeni bir deployment tetikler.
 
 ## Kapsam dışı (sonraki adımlar)
 
