@@ -126,26 +126,17 @@ a {
   color: var(--text-muted);
   flex-shrink: 0;
 }
-.lang-switch {
-  display: flex;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.1);
+.lang-select {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
   border-radius: 6px;
-  padding: 2px;
-}
-.lang-switch button {
-  border: none;
-  background: transparent;
-  color: #dbe3ee;
-  padding: 4px 10px;
-  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 0.82rem;
   cursor: pointer;
-  font-size: 0.85rem;
 }
-.lang-switch button.active {
-  background: #fff;
-  color: var(--primary);
-  font-weight: 600;
+.lang-select option {
+  color: #000;
 }
 .btn-logout {
   background: transparent;
@@ -511,4 +502,14 @@ table.data-table tbody tr:hover {
     flex: 1 0 33%;
     margin-bottom: 12px;
   }
+}
+
+/* RTL (Arapça/Farsça) düzeltmeleri — geri kalan her şey dir="rtl" ile
+   otomatik ayna görünüme geçer (flex sırası, metin hizası vb.) */
+[dir="rtl"] table.data-table th,
+[dir="rtl"] table.data-table td {
+  text-align: right;
+}
+[dir="rtl"] .doc-item-note {
+  text-align: right;
 }

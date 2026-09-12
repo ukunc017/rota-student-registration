@@ -11,10 +11,7 @@
     <div class="container">
       <span class="brand" data-i18n="app_name">Rota Education Consultancy</span>
       <div class="header-actions">
-        <div class="lang-switch">
-          <button type="button" data-lang-btn="tr" onclick="rotaI18n.setLang('tr')">TR</button>
-          <button type="button" data-lang-btn="en" onclick="rotaI18n.setLang('en')">EN</button>
-        </div>
+        <select class="lang-select" data-lang-select onchange="rotaI18n.setLang(this.value)"></select>
       </div>
     </div>
   </header>

@@ -63,7 +63,7 @@
   function renderDocumentRow(dt) {
     const doc = state.documentsByType[dt.id];
     const status = doc ? doc.status : "missing";
-    const label = window.rotaI18n.getLang() === "en" ? dt.label_en : dt.label_tr;
+    const label = window.rotaI18n.docTypeLabel(dt);
     const uploadLabel = doc ? t("document_replace") : t("document_upload");
     return `
       <li class="doc-item">

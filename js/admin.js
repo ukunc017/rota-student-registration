@@ -67,9 +67,10 @@
     return `<span class="badge ${cls}">${t(key)}</span>`;
   }
 
+  const DATE_LOCALES = { tr: "tr-TR", en: "en-US", ar: "ar-EG", fa: "fa-IR", ru: "ru-RU" };
   function fmtDate(iso) {
     if (!iso) return "";
-    return new Date(iso).toLocaleDateString(window.rotaI18n.getLang() === "en" ? "en-US" : "tr-TR");
+    return new Date(iso).toLocaleDateString(DATE_LOCALES[window.rotaI18n.getLang()] || "en-US");
   }
 
   // ---------------------------------------------------------------- LIST --
@@ -224,7 +225,7 @@
     return `
       <li class="doc-item">
         <div class="doc-item-main">
-          <span class="doc-item-name">${dt.label_tr} / ${dt.label_en}</span>
+          <span class="doc-item-name">${window.rotaI18n.docTypeLabel(dt)}</span>
           ${statusBadge(status)}
           ${status === "rejected" && doc.review_note ? `<span class="doc-item-note">${t("document_review_note")}: ${doc.review_note}</span>` : ""}
         </div>
