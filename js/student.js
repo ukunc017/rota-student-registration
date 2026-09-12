@@ -68,7 +68,7 @@
     return `
       <li class="doc-item">
         <div class="doc-item-main">
-          <span class="doc-item-name">${label}${dt.required ? "" : " (opsiyonel)"}</span>
+          <span class="doc-item-name">${label}${dt.required ? "" : " " + t("document_optional_label")}</span>
           ${statusBadge(status)}
           ${status === "rejected" && doc.review_note ? `<span class="doc-item-note">${t("document_review_note")}: ${doc.review_note}</span>` : ""}
         </div>

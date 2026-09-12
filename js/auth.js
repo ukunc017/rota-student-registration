@@ -76,7 +76,8 @@
   }
 
   // Header'daki #role-badge elemanını doldurur, hangi hesapla (admin/öğrenci)
-  // giriş yapıldığını gösterir. student.js/admin.js render() içinde çağrılır.
+  // giriş yapıldığını gösterir. Tıklanınca ad+e-posta+rol bilgisini bir
+  // popover'da açar. student.js/admin.js render() içinde çağrılır.
   function renderRoleBadge(profile) {
     const el = document.getElementById("role-badge");
     if (!el || !profile) return;
@@ -84,6 +85,46 @@
     const name = profile.full_name || profile.email || "";
     el.innerHTML = `${name ? name + " " : ""}<span class="role-name">· ${label}</span>`;
     el.hidden = false;
+    el.classList.add("role-badge-clickable");
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", "0");
+    el.onclick = () => toggleProfilePopover(el, profile);
+  }
+
+  function toggleProfilePopover(anchorEl, profile) {
+    const existing = document.getElementById("profile-popover");
+    if (existing) {
+      existing.remove();
+      return;
+    }
+    const t = window.rotaI18n.t;
+    const roleLabel = t(profile.role === "admin" ? "role_admin" : "role_student");
+    const popover = document.createElement("div");
+    popover.id = "profile-popover";
+    popover.className = "profile-popover";
+    popover.innerHTML = `
+      <div class="profile-popover-title">${t("profile_title")}</div>
+      <div class="profile-popover-row"><span class="profile-popover-label">${t("profile_full_name")}</span><span>${
+        profile.full_name || "—"
+      }</span></div>
+      <div class="profile-popover-row"><span class="profile-popover-label">${t("profile_email")}</span><span>${
+        profile.email || "—"
+      }</span></div>
+      <div class="profile-popover-row"><span class="profile-popover-label">${t("profile_role")}</span><span>${roleLabel}</span></div>
+    `;
+    document.body.appendChild(popover);
+    const rect = anchorEl.getBoundingClientRect();
+    popover.style.top = `${rect.bottom + window.scrollY + 6}px`;
+    popover.style.right = `${document.documentElement.clientWidth - rect.right}px`;
+
+    setTimeout(() => {
+      document.addEventListener("click", function onDocClick(e) {
+        if (!popover.contains(e.target) && e.target !== anchorEl) {
+          popover.remove();
+          document.removeEventListener("click", onDocClick);
+        }
+      });
+    }, 0);
   }
 
   window.rotaAuth = { signUp, signIn, signOut, getCurrentProfile, requireRole, renderRoleBadge };

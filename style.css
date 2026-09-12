@@ -85,6 +85,47 @@ a {
 .role-badge.role-admin .role-name {
   opacity: 0.75;
 }
+.role-badge.role-badge-clickable {
+  cursor: pointer;
+  border: none;
+}
+.role-badge.role-badge-clickable:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.role-badge.role-admin.role-badge-clickable:hover {
+  filter: brightness(0.96);
+}
+.profile-popover {
+  position: absolute;
+  z-index: 1000;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  min-width: 230px;
+  font-size: 0.85rem;
+}
+.profile-popover-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.profile-popover-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  color: var(--text);
+}
+.profile-popover-row span:last-child {
+  text-align: right;
+  word-break: break-word;
+}
+.profile-popover-label {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
 .lang-switch {
   display: flex;
   gap: 4px;

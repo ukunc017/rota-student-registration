@@ -20,6 +20,12 @@ window.ROTA_I18N = {
     register_switch_to_login: "Zaten hesabınız var mı? Giriş yapın",
     auth_error_generic: "Bir hata oluştu, lütfen tekrar deneyin.",
     auth_admin_notice: "Yönetici hesabıyla giriş yapıyorsanız aynı formu kullanabilirsiniz.",
+    register_check_email: "E-postanızı kontrol edip hesabınızı onaylayın, ardından giriş yapın.",
+
+    profile_title: "Hesap Bilgileri",
+    profile_full_name: "Ad Soyad",
+    profile_email: "E-posta",
+    profile_role: "Rol",
 
     step_pre_registration: "Ön Kayıt",
     step_documents_pending: "Evrak Yükleme",
@@ -40,6 +46,7 @@ window.ROTA_I18N = {
     document_status_rejected: "Reddedildi",
     document_upload: "Yükle",
     document_replace: "Yeniden Yükle",
+    document_optional_label: "(opsiyonel)",
     document_view: "Görüntüle",
     document_review_note: "Not",
 
@@ -96,6 +103,12 @@ window.ROTA_I18N = {
     register_switch_to_login: "Already have an account? Sign in",
     auth_error_generic: "Something went wrong, please try again.",
     auth_admin_notice: "Admins can sign in using the same form.",
+    register_check_email: "Please check your email to confirm your account, then sign in.",
+
+    profile_title: "Account Details",
+    profile_full_name: "Full Name",
+    profile_email: "Email",
+    profile_role: "Role",
 
     step_pre_registration: "Pre-Registration",
     step_documents_pending: "Document Upload",
@@ -116,6 +129,7 @@ window.ROTA_I18N = {
     document_status_rejected: "Rejected",
     document_upload: "Upload",
     document_replace: "Replace",
+    document_optional_label: "(optional)",
     document_view: "View",
     document_review_note: "Note",
 
