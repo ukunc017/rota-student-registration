@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rota Education Consultancy — Yönetim Paneli</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <span class="brand" data-i18n="app_name">Rota Education Consultancy</span>
+      <div class="header-actions">
+        <div class="lang-switch">
+          <button type="button" data-lang-btn="tr" onclick="rotaI18n.setLang('tr'); render()">TR</button>
+          <button type="button" data-lang-btn="en" onclick="rotaI18n.setLang('en'); render()">EN</button>
+        </div>
+        <button class="btn-logout" data-i18n="nav_logout" onclick="rotaAuth.signOut()">Çıkış Yap</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container" id="app">
+      <p class="empty-state" data-i18n="loading">Yükleniyor...</p>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

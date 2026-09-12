@@ -1,0 +1,5 @@
+node_modules/
+.vercel
+js/config.js
+.DS_Store
+*.log

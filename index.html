@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rota Education Consultancy</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <span class="brand" data-i18n="app_name">Rota Education Consultancy</span>
+      <div class="header-actions">
+        <div class="lang-switch">
+          <button type="button" data-lang-btn="tr" onclick="rotaI18n.setLang('tr')">TR</button>
+          <button type="button" data-lang-btn="en" onclick="rotaI18n.setLang('en')">EN</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="auth-wrap">
+      <div class="card">
+        <!-- Login form -->
+        <div id="login-view">
+          <h1 data-i18n="login_title">Giriş Yap</h1>
+          <p class="auth-subtitle" data-i18n="login_subtitle">Başvurunuzu takip etmek için giriş yapın</p>
+          <form id="login-form">
+            <div class="field">
+              <label data-i18n="login_email">E-posta</label>
+              <input type="email" id="login-email" required autocomplete="email" />
+            </div>
+            <div class="field">
+              <label data-i18n="login_password">Şifre</label>
+              <input type="password" id="login-password" required autocomplete="current-password" />
+            </div>
+            <button type="submit" class="btn btn-block" id="login-submit" data-i18n="login_submit">Giriş Yap</button>
+            <div class="form-msg" id="login-msg"></div>
+          </form>
+          <div class="auth-switch">
+            <button type="button" class="link-btn" data-i18n="login_switch_to_register" onclick="showView('register')">
+              Hesabınız yok mu? Kayıt olun
+            </button>
+          </div>
+          <p class="auth-note" data-i18n="auth_admin_notice">Yönetici hesabıyla giriş yapıyorsanız aynı formu kullanabilirsiniz.</p>
+        </div>
+
+        <!-- Register form -->
+        <div id="register-view" hidden>
+          <h1 data-i18n="register_title">Kayıt Ol</h1>
+          <form id="register-form">
+            <div class="field">
+              <label data-i18n="register_full_name">Ad Soyad</label>
+              <input type="text" id="register-name" required autocomplete="name" />
+            </div>
+            <div class="field">
+              <label data-i18n="login_email">E-posta</label>
+              <input type="email" id="register-email" required autocomplete="email" />
+            </div>
+            <div class="field">
+              <label data-i18n="login_password">Şifre</label>
+              <input type="password" id="register-password" required minlength="6" autocomplete="new-password" />
+            </div>
+            <div class="row">
+              <div class="field">
+                <label data-i18n="register_phone">Telefon</label>
+                <input type="tel" id="register-phone" autocomplete="tel" />
+              </div>
+              <div class="field">
+                <label data-i18n="register_nationality">Uyruk</label>
+                <input type="text" id="register-nationality" autocomplete="country-name" />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-block" id="register-submit" data-i18n="register_submit">Kayıt Ol</button>
+            <div class="form-msg" id="register-msg"></div>
+          </form>
+          <div class="auth-switch">
+            <button type="button" class="link-btn" data-i18n="register_switch_to_login" onclick="showView('login')">
+              Zaten hesabınız var mı? Giriş yapın
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    function showView(view) {
+      document.getElementById("login-view").hidden = view !== "login";
+      document.getElementById("register-view").hidden = view !== "register";
+    }
+
+    async function redirectByRole() {
+      const result = await rotaAuth.getCurrentProfile();
+      if (!result) return;
+      window.location.href = result.profile.role === "admin" ? "admin.html" : "student.html";
+    }
+
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("login-submit");
+      const msg = document.getElementById("login-msg");
+      msg.textContent = "";
+      msg.className = "form-msg";
+      btn.disabled = true;
+      try {
+        await rotaAuth.signIn({
+          email: document.getElementById("login-email").value.trim(),
+          password: document.getElementById("login-password").value,
+        });
+        await redirectByRole();
+      } catch (err) {
+        msg.textContent = err.message || rotaI18n.t("auth_error_generic");
+        msg.classList.add("error");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById("register-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("register-submit");
+      const msg = document.getElementById("register-msg");
+      msg.textContent = "";
+      msg.className = "form-msg";
+      btn.disabled = true;
+      try {
+        const data = await rotaAuth.signUp({
+          email: document.getElementById("register-email").value.trim(),
+          password: document.getElementById("register-password").value,
+          fullName: document.getElementById("register-name").value.trim(),
+          phone: document.getElementById("register-phone").value.trim(),
+          nationality: document.getElementById("register-nationality").value.trim(),
+        });
+        if (data.session) {
+          window.location.href = "student.html";
+        } else {
+          showView("login");
+          const loginMsg = document.getElementById("login-msg");
+          loginMsg.textContent = "E-postanızı kontrol edip hesabınızı onaylayın, ardından giriş yapın.";
+          loginMsg.classList.add("success");
+        }
+      } catch (err) {
+        msg.textContent = err.message || rotaI18n.t("auth_error_generic");
+        msg.classList.add("error");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    redirectByRole();
+  </script>
+</body>
+</html>
