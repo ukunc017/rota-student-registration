@@ -75,5 +75,16 @@
     return result;
   }
 
-  window.rotaAuth = { signUp, signIn, signOut, getCurrentProfile, requireRole };
+  // Header'daki #role-badge elemanını doldurur, hangi hesapla (admin/öğrenci)
+  // giriş yapıldığını gösterir. student.js/admin.js render() içinde çağrılır.
+  function renderRoleBadge(profile) {
+    const el = document.getElementById("role-badge");
+    if (!el || !profile) return;
+    const label = window.rotaI18n.t(profile.role === "admin" ? "role_admin" : "role_student");
+    const name = profile.full_name || profile.email || "";
+    el.innerHTML = `${name ? name + " " : ""}<span class="role-name">· ${label}</span>`;
+    el.hidden = false;
+  }
+
+  window.rotaAuth = { signUp, signIn, signOut, getCurrentProfile, requireRole, renderRoleBadge };
 })();

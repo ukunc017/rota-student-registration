@@ -62,6 +62,29 @@ a {
   align-items: center;
   gap: 14px;
 }
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  white-space: nowrap;
+}
+.role-badge .role-name {
+  font-weight: 400;
+  opacity: 0.85;
+}
+.role-badge.role-admin {
+  background: var(--accent);
+  color: var(--primary-dark);
+}
+.role-badge.role-admin .role-name {
+  opacity: 0.75;
+}
 .lang-switch {
   display: flex;
   gap: 4px;

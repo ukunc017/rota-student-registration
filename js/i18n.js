@@ -3,6 +3,8 @@ window.ROTA_I18N = {
   tr: {
     app_name: "Rota Education Consultancy",
     nav_logout: "Çıkış Yap",
+    role_admin: "Admin",
+    role_student: "Öğrenci",
 
     login_title: "Giriş Yap",
     login_subtitle: "Başvurunuzu takip etmek için giriş yapın",
@@ -77,6 +79,8 @@ window.ROTA_I18N = {
   en: {
     app_name: "Rota Education Consultancy",
     nav_logout: "Log Out",
+    role_admin: "Admin",
+    role_student: "Student",
 
     login_title: "Sign In",
     login_subtitle: "Sign in to track your application",

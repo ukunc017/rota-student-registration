@@ -3,7 +3,7 @@
   const t = (k) => window.rotaI18n.t(k);
   const STATUS_ORDER = ["pre_registration", "documents_pending", "under_review", "accepted", "completed"];
 
-  const state = { userId: null, application: null, documentTypes: [], documentsByType: {} };
+  const state = { userId: null, profile: null, application: null, documentTypes: [], documentsByType: {} };
 
   async function loadAll() {
     let { data: application } = await sb()
@@ -96,6 +96,7 @@
   }
 
   function render() {
+    window.rotaAuth.renderRoleBadge(state.profile);
     const app = document.getElementById("app");
     app.innerHTML = `
       <div class="card">
@@ -214,6 +215,7 @@
     const auth = await window.rotaAuth.requireRole("student");
     if (!auth) return;
     state.userId = auth.session.user.id;
+    state.profile = auth.profile;
     try {
       await loadAll();
       render();

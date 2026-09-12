@@ -12,6 +12,7 @@
 
   const state = {
     view: "list",
+    profile: null,
     applications: [],
     documentTypesAll: [],
     filterStatus: "",
@@ -368,6 +369,7 @@
 
   // --------------------------------------------------------------- MAIN --
   function render() {
+    window.rotaAuth.renderRoleBadge(state.profile);
     if (state.view === "detail" && state.detail) {
       renderDetail();
     } else {
@@ -379,6 +381,7 @@
   (async function init() {
     const auth = await window.rotaAuth.requireRole("admin");
     if (!auth) return;
+    state.profile = auth.profile;
     try {
       await Promise.all([loadApplications(), loadDocumentTypesAll()]);
       render();
