@@ -182,7 +182,7 @@
   // window.open() çağrısını pop-up engelleyicide sessizce engelliyor.
   async function openSignedUrl(storagePath) {
     const win = window.open("", "_blank");
-    const { data, error } = await sb().storage.from("documents").createSignedUrl(storagePath, 60);
+    const { data, error } = await sb().storage.from("documents").createSignedUrl(storagePath, 600);
     if (error) {
       if (win) win.close();
       return alert(error.message);
