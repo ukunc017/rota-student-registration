@@ -177,18 +177,13 @@
     }
   }
 
-  // Sekmeyi tıklama anında (senkron olarak) açar, sonra imzalı URL hazır
-  // olunca içine yönlendirir — aksi halde bazı tarayıcılar await sonrası
-  // window.open() çağrısını pop-up engelleyicide sessizce engelliyor.
+  // Yeni sekme açmak (window.open) yerine mevcut sekmede yönlendirir —
+  // tarayıcılar arasında pop-up engelleyici davranışı tutarsız olduğundan
+  // (Chrome/Firefox farklı davranıyor) en güvenilir yöntem bu.
   async function openSignedUrl(storagePath) {
-    const win = window.open("", "_blank");
     const { data, error } = await sb().storage.from("documents").createSignedUrl(storagePath, 600);
-    if (error) {
-      if (win) win.close();
-      return alert(error.message);
-    }
-    if (win) win.location.href = data.signedUrl;
-    else window.open(data.signedUrl, "_blank");
+    if (error) return alert(error.message);
+    window.location.href = data.signedUrl;
   }
 
   async function uploadDocument(dt, file) {
