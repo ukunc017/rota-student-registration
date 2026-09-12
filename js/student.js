@@ -165,22 +165,30 @@
         const docId = btn.getAttribute("data-view-doc");
         const doc = Object.values(state.documentsByType).find((d) => d.id === docId);
         if (!doc) return;
-        const { data, error } = await sb().storage.from("documents").createSignedUrl(doc.storage_path, 60);
-        if (error) return alert(error.message);
-        window.open(data.signedUrl, "_blank");
+        await openSignedUrl(doc.storage_path);
       });
     });
 
     const letterBtn = document.getElementById("download-letter-btn");
     if (letterBtn) {
       letterBtn.addEventListener("click", async () => {
-        const { data, error } = await sb()
-          .storage.from("documents")
-          .createSignedUrl(state.application.acceptance_letter_path, 60);
-        if (error) return alert(error.message);
-        window.open(data.signedUrl, "_blank");
+        await openSignedUrl(state.application.acceptance_letter_path);
       });
     }
+  }
+
+  // Sekmeyi tıklama anında (senkron olarak) açar, sonra imzalı URL hazır
+  // olunca içine yönlendirir — aksi halde bazı tarayıcılar await sonrası
+  // window.open() çağrısını pop-up engelleyicide sessizce engelliyor.
+  async function openSignedUrl(storagePath) {
+    const win = window.open("", "_blank");
+    const { data, error } = await sb().storage.from("documents").createSignedUrl(storagePath, 60);
+    if (error) {
+      if (win) win.close();
+      return alert(error.message);
+    }
+    if (win) win.location.href = data.signedUrl;
+    else window.open(data.signedUrl, "_blank");
   }
 
   async function uploadDocument(dt, file) {
