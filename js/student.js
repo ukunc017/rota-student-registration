@@ -3,7 +3,7 @@
   const t = (k) => window.rotaI18n.t(k);
   const STATUS_ORDER = ["pre_registration", "documents_pending", "under_review", "accepted", "completed"];
 
-  const state = { userId: null, profile: null, application: null, documentTypes: [], documentsByType: {} };
+  const state = { userId: null, profile: null, application: null, documentTypes: [], documentsByType: {}, universities: [] };
 
   async function loadAll() {
     let { data: application } = await sb()
@@ -36,6 +36,27 @@
       .eq("application_id", application.id);
     state.documentsByType = {};
     (documents || []).forEach((d) => (state.documentsByType[d.document_type_id] = d));
+
+    try {
+      state.universities = await window.rotaCatalog.loadCatalog();
+    } catch {
+      state.universities = [];
+    }
+
+    const pref = window.rotaCatalog.loadApplyPref();
+    if (pref && (pref.universityId || pref.universityName)) {
+      const patch = {
+        university_id: pref.universityId || state.application.university_id,
+        program_id: pref.programId || state.application.program_id,
+        target_university: pref.universityName || state.application.target_university,
+        target_program: pref.programName || state.application.target_program,
+      };
+      const { error } = await sb().from("applications").update(patch).eq("id", state.application.id);
+      if (!error) {
+        Object.assign(state.application, patch);
+        sessionStorage.removeItem("rota_apply_pref");
+      }
+    }
   }
 
   function statusBadge(status) {
@@ -78,6 +99,7 @@
             ${uploadLabel}
             <input type="file" data-upload-doctype="${dt.id}" style="display:none" />
           </label>
+          ${doc ? `<button type="button" class="btn btn-danger btn-sm" data-delete-doc="${doc.id}">${t("document_delete")}</button>` : ""}
         </div>
       </li>`;
   }
@@ -95,6 +117,19 @@
       </div>`;
   }
 
+  function selectedUniversity() {
+    return state.universities.find((u) => u.id === state.application.university_id) || null;
+  }
+
+  function programOptionsHtml() {
+    const uni = selectedUniversity();
+    const programs = uni ? uni.programs : [];
+    const current = state.application.program_id;
+    return `<option value="">${t("application_choose_placeholder")}</option>${programs
+      .map((p) => `<option value="${p.id}" ${p.id === current ? "selected" : ""}>${window.rotaCatalog.escapeHtml(p.name)}</option>`)
+      .join("")}`;
+  }
+
   function render() {
     window.rotaAuth.renderRoleBadge(state.profile);
     const app = document.getElementById("app");
@@ -106,12 +141,22 @@
         <h2>${t("application_title")}</h2>
         <form id="application-form">
           <div class="field">
-            <label>${t("application_target_program")}</label>
-            <input type="text" id="target-program" value="${state.application.target_program || ""}" />
+            <label>${t("application_choose_university")}</label>
+            <select id="university-id">
+              <option value="">${t("application_choose_placeholder")}</option>
+              ${state.universities
+                .map(
+                  (u) =>
+                    `<option value="${u.id}" ${u.id === state.application.university_id ? "selected" : ""}>${window.rotaCatalog.escapeHtml(u.name)}${
+                      u.city ? " — " + window.rotaCatalog.escapeHtml(u.city) : ""
+                    }</option>`
+                )
+                .join("")}
+            </select>
           </div>
           <div class="field">
-            <label>${t("application_target_university")}</label>
-            <input type="text" id="target-university" value="${state.application.target_university || ""}" />
+            <label>${t("application_choose_program")}</label>
+            <select id="program-id">${programOptionsHtml()}</select>
           </div>
           <button type="submit" class="btn">${t("application_save")}</button>
           <span class="form-msg success" id="application-save-msg"></span>
@@ -129,20 +174,29 @@
   }
 
   function attachHandlers() {
+    document.getElementById("university-id").addEventListener("change", () => {
+      state.application.university_id = document.getElementById("university-id").value || null;
+      state.application.program_id = null;
+      document.getElementById("program-id").innerHTML = programOptionsHtml();
+    });
+
     document.getElementById("application-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const target_program = document.getElementById("target-program").value.trim();
-      const target_university = document.getElementById("target-university").value.trim();
+      const university_id = document.getElementById("university-id").value || null;
+      const program_id = document.getElementById("program-id").value || null;
+      const uni = state.universities.find((u) => u.id === university_id);
+      const program = uni?.programs.find((p) => p.id === program_id);
+      const target_university = uni?.name || "";
+      const target_program = program?.name || "";
       const { error } = await sb()
         .from("applications")
-        .update({ target_program, target_university })
+        .update({ university_id, program_id, target_program, target_university })
         .eq("id", state.application.id);
       const msg = document.getElementById("application-save-msg");
       msg.textContent = error ? error.message : t("application_saved");
       msg.className = error ? "form-msg error" : "form-msg success";
       if (!error) {
-        state.application.target_program = target_program;
-        state.application.target_university = target_university;
+        Object.assign(state.application, { university_id, program_id, target_program, target_university });
       }
     });
 
@@ -169,6 +223,20 @@
       });
     });
 
+    document.querySelectorAll("[data-delete-doc]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm(t("document_delete_confirm"))) return;
+        const docId = btn.getAttribute("data-delete-doc");
+        const doc = Object.values(state.documentsByType).find((d) => d.id === docId);
+        if (!doc) return;
+        try {
+          await deleteDocument(doc);
+        } catch (err) {
+          alert(err.message || t("auth_error_generic"));
+        }
+      });
+    });
+
     const letterBtn = document.getElementById("download-letter-btn");
     if (letterBtn) {
       letterBtn.addEventListener("click", async () => {
@@ -184,6 +252,16 @@
     const { data, error } = await sb().storage.from("documents").createSignedUrl(storagePath, 600);
     if (error) return alert(error.message);
     window.location.href = data.signedUrl;
+  }
+
+  async function deleteDocument(doc) {
+    const { error: dbErr } = await sb().from("documents").delete().eq("id", doc.id);
+    if (dbErr) throw dbErr;
+    if (doc.storage_path) {
+      await sb().storage.from("documents").remove([doc.storage_path]);
+    }
+    await loadAll();
+    render();
   }
 
   async function uploadDocument(dt, file) {

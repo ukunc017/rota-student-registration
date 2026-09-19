@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rota Education Consultancy — Yönetim Paneli</title>
+  <title>Rota Education Consultancy</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body data-page="university">
   <header class="site-header">
     <div class="container">
       <a class="brand" href="index.html" data-i18n="app_name">Rota Education Consultancy</a>
       <div class="header-actions">
         <a class="header-link" href="index.html" data-i18n="nav_universities">Üniversiteler</a>
-        <span class="role-badge role-admin" id="role-badge" hidden></span>
-        <select class="lang-select" data-lang-select onchange="rotaI18n.setLang(this.value); render()"></select>
-        <button class="btn-logout" data-i18n="nav_logout" onclick="rotaAuth.signOut()">Çıkış Yap</button>
+        <select class="lang-select" data-lang-select onchange="rotaI18n.setLang(this.value); location.reload()"></select>
+        <span id="auth-slot"></span>
       </div>
     </div>
   </header>
@@ -32,6 +31,5 @@
   <script src="js/i18n-catalog.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/catalog.js"></script>
-  <script src="js/admin.js"></script>
 </body>
 </html>

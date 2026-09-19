@@ -19,6 +19,10 @@
     search: "",
     selectedId: null,
     detail: null,
+    tab: "apps",
+    universities: [],
+    editUniversity: null,
+    editPrograms: [],
   };
 
   async function loadApplications() {
@@ -28,6 +32,59 @@
       .order("updated_at", { ascending: false });
     if (error) throw error;
     state.applications = data || [];
+  }
+
+  async function loadUniversities() {
+    const { data, error } = await sb().from("universities").select("*").order("sort_order").order("name");
+    if (error) throw error;
+    const { data: programs } = await sb().from("programs").select("*").order("sort_order").order("name");
+    const byUni = {};
+    (programs || []).forEach((p) => {
+      (byUni[p.university_id] ||= []).push(p);
+    });
+    state.universities = (data || []).map((u) => ({ ...u, programs: byUni[u.id] || [] }));
+  }
+
+  function slugify(name) {
+    return (
+      name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "") || "university"
+    );
+  }
+
+  function esc(v) {
+    return window.rotaCatalog.escapeHtml(v);
+  }
+
+  function adminNav() {
+    return `
+      <div class="admin-tabs">
+        <button type="button" class="btn ${state.tab === "apps" ? "" : "btn-secondary"} btn-sm" data-tab="apps">${t("admin_nav_applications")}</button>
+        <button type="button" class="btn ${state.tab === "unis" ? "" : "btn-secondary"} btn-sm" data-tab="unis">${t("admin_nav_universities")}</button>
+      </div>`;
+  }
+
+  function bindAdminNav() {
+    document.querySelectorAll("[data-tab]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        state.tab = btn.getAttribute("data-tab");
+        state.view = "list";
+        state.editUniversity = null;
+        if (state.tab === "unis") {
+          try {
+            await loadUniversities();
+          } catch (err) {
+            document.getElementById("app").innerHTML = `<p class="empty-state">${esc(err.message)}</p><p class="muted" style="text-align:center">${t("catalog_sql_hint")}</p>`;
+            return;
+          }
+        }
+        render();
+      });
+    });
   }
 
   async function loadDocumentTypesAll() {
@@ -79,7 +136,7 @@
     return state.applications.filter((a) => {
       if (state.filterStatus && a.status !== state.filterStatus) return false;
       if (!q) return true;
-      const hay = `${a.profile?.full_name || ""} ${a.profile?.email || ""} ${a.profile?.nationality || ""}`.toLowerCase();
+      const hay = `${a.profile?.full_name || ""} ${a.profile?.email || ""} ${a.profile?.nationality || ""} ${a.target_university || ""} ${a.target_program || ""}`.toLowerCase();
       return hay.includes(q);
     });
   }
@@ -92,17 +149,41 @@
           .map(
             (dt) => `
           <div class="doctype-row ${dt.active ? "" : "inactive"}">
-            <span>${dt.label_tr} / ${dt.label_en}</span>
+            <span>${dt.label_tr} / ${dt.label_en}${dt.label_ar ? " / " + dt.label_ar : ""}${
+              dt.label_fa ? " / " + dt.label_fa : ""
+            }${dt.label_ru ? " / " + dt.label_ru : ""}</span>
             <button type="button" class="btn btn-secondary btn-sm" data-toggle-doctype="${dt.id}" data-active="${dt.active}">
               ${dt.active ? t("admin_document_type_deactivate") : t("admin_document_type_activate")}
             </button>
           </div>`
           )
           .join("")}
-        <form class="inline-form" id="add-doctype-form">
-          <input type="text" id="new-doctype-label" data-i18n-placeholder="admin_document_type_new_placeholder" placeholder="${t(
-            "admin_document_type_new_placeholder"
-          )}" required />
+        <form id="add-doctype-form" class="spaced-top">
+          <div class="row">
+            <div class="field">
+              <label>Türkçe *</label>
+              <input type="text" id="new-doctype-tr" required />
+            </div>
+            <div class="field">
+              <label>English *</label>
+              <input type="text" id="new-doctype-en" required />
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>العربية</label>
+              <input type="text" id="new-doctype-ar" dir="rtl" />
+            </div>
+            <div class="field">
+              <label>فارسی</label>
+              <input type="text" id="new-doctype-fa" dir="rtl" />
+            </div>
+            <div class="field">
+              <label>Русский</label>
+              <input type="text" id="new-doctype-ru" />
+            </div>
+          </div>
+          <p class="muted" style="margin: 0 0 10px">${t("admin_document_type_optional_hint")}</p>
           <button type="submit" class="btn btn-sm">${t("admin_document_type_add")}</button>
         </form>
       </div>`;
@@ -112,6 +193,7 @@
     const rows = filteredApplications();
     const app = document.getElementById("app");
     app.innerHTML = `
+      ${adminNav()}
       <div class="card">
         <h2>${t("admin_title")}</h2>
         <div class="table-toolbar">
@@ -132,6 +214,7 @@
                 <thead>
                   <tr>
                     <th>${t("admin_table_name")}</th>
+                    <th>${t("application_choose_university")}</th>
                     <th>${t("admin_table_nationality")}</th>
                     <th>${t("admin_table_status")}</th>
                     <th>${t("admin_table_updated")}</th>
@@ -143,6 +226,7 @@
                       (a) => `
                     <tr data-open-app="${a.id}">
                       <td>${a.profile?.full_name || "—"}<br/><span class="muted">${a.profile?.email || ""}</span></td>
+                      <td>${a.target_university || "—"}<br/><span class="muted">${a.target_program || ""}</span></td>
                       <td>${a.profile?.nationality || "—"}</td>
                       <td>${statusBadge_forApp(a.status)}</td>
                       <td>${fmtDate(a.updated_at)}</td>
@@ -156,7 +240,265 @@
       ${renderDocTypeManager()}
     `;
     window.rotaI18n.applyI18n();
+    bindAdminNav();
     attachListHandlers();
+  }
+
+  function renderUniversityList() {
+    const app = document.getElementById("app");
+    app.innerHTML = `
+      ${adminNav()}
+      <div class="card">
+        <div class="row">
+          <h2 style="margin:0">${t("admin_universities_title")}</h2>
+          <div class="toolbar-right">
+            <button type="button" class="btn" id="add-uni-btn">${t("admin_university_add")}</button>
+          </div>
+        </div>
+        ${
+          state.universities.length === 0
+            ? `<p class="empty-state">${t("admin_no_universities")}</p>`
+            : `<table class="data-table spaced-top">
+                <thead>
+                  <tr>
+                    <th>${t("admin_field_name")}</th>
+                    <th>${t("admin_field_city")}</th>
+                    <th>${t("admin_programs_title")}</th>
+                    <th>${t("admin_field_active")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${state.universities
+                    .map(
+                      (u) => `
+                    <tr data-edit-uni="${u.id}">
+                      <td>${esc(u.name)}</td>
+                      <td>${esc(u.city || "—")}</td>
+                      <td>${u.programs.length}</td>
+                      <td>${u.active ? t("admin_field_active") : t("admin_document_type_deactivate")}</td>
+                    </tr>`
+                    )
+                    .join("")}
+                </tbody>
+              </table>`
+        }
+      </div>`;
+    bindAdminNav();
+    document.getElementById("add-uni-btn").addEventListener("click", () => {
+      state.editUniversity = {
+        id: null,
+        name: "",
+        slug: "",
+        city: "",
+        kind: "public",
+        founded_year: "",
+        website: "",
+        instruction_languages: "",
+        student_count: "",
+        tuition_range: "",
+        housing: "",
+        about: "",
+        admission_requirements: "",
+        city_life: "",
+        rota_note: "",
+        active: true,
+      };
+      state.editPrograms = [];
+      state.view = "uni-edit";
+      render();
+    });
+    document.querySelectorAll("[data-edit-uni]").forEach((row) => {
+      row.addEventListener("click", () => {
+        const uni = state.universities.find((u) => u.id === row.getAttribute("data-edit-uni"));
+        state.editUniversity = { ...uni };
+        state.editPrograms = (uni.programs || []).map((p) => ({ ...p }));
+        state.view = "uni-edit";
+        render();
+      });
+    });
+  }
+
+  function fieldInput(id, label, value, type) {
+    const v = value == null ? "" : value;
+    if (type === "textarea") {
+      return `<div class="field"><label>${label}</label><textarea id="${id}" rows="4">${esc(v)}</textarea></div>`;
+    }
+    if (type === "checkbox") {
+      return `<div class="field"><label class="check-label"><input type="checkbox" id="${id}" ${value ? "checked" : ""} /> ${label}</label></div>`;
+    }
+    return `<div class="field"><label>${label}</label><input type="${type || "text"}" id="${id}" value="${esc(v)}" /></div>`;
+  }
+
+  function renderUniversityEdit() {
+    const u = state.editUniversity;
+    const app = document.getElementById("app");
+    app.innerHTML = `
+      ${adminNav()}
+      <button type="button" class="link-btn" id="back-unis">&larr; ${t("admin_back_universities")}</button>
+      <div class="card spaced-top">
+        <h2>${u.id ? t("admin_university_edit") : t("admin_university_add")}</h2>
+        <form id="uni-form">
+          ${fieldInput("uni-name", t("admin_field_name"), u.name)}
+          ${fieldInput("uni-slug", t("admin_field_slug"), u.slug)}
+          <div class="row">
+            ${fieldInput("uni-city", t("admin_field_city"), u.city)}
+            <div class="field">
+              <label>${t("admin_field_kind")}</label>
+              <select id="uni-kind">
+                <option value="public" ${u.kind === "public" ? "selected" : ""}>${t("uni_kind_public")}</option>
+                <option value="private" ${u.kind === "private" ? "selected" : ""}>${t("uni_kind_private")}</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            ${fieldInput("uni-founded", t("admin_field_founded"), u.founded_year, "number")}
+            ${fieldInput("uni-website", t("admin_field_website"), u.website, "url")}
+          </div>
+          ${fieldInput("uni-languages", t("admin_field_languages"), u.instruction_languages)}
+          <div class="row">
+            ${fieldInput("uni-students", t("admin_field_students"), u.student_count)}
+            ${fieldInput("uni-tuition", t("admin_field_tuition"), u.tuition_range)}
+          </div>
+          ${fieldInput("uni-housing", t("admin_field_housing"), u.housing)}
+          ${fieldInput("uni-about", t("admin_field_about"), u.about, "textarea")}
+          ${fieldInput("uni-admission", t("admin_field_admission"), u.admission_requirements, "textarea")}
+          ${fieldInput("uni-city-life", t("admin_field_city_life"), u.city_life, "textarea")}
+          ${fieldInput("uni-rota-note", t("admin_field_rota_note"), u.rota_note, "textarea")}
+          ${fieldInput("uni-active", t("admin_field_active"), u.active, "checkbox")}
+          <button type="submit" class="btn">${t("application_save")}</button>
+          <span class="form-msg success" id="uni-save-msg"></span>
+        </form>
+      </div>
+      ${
+        u.id
+          ? `<div class="card">
+        <h2>${t("admin_programs_title")}</h2>
+        ${state.editPrograms
+          .map(
+            (p, i) => `
+          <form class="program-edit" data-program-index="${i}">
+            <div class="row">
+              ${fieldInput("p-name-" + i, t("admin_field_name"), p.name)}
+              ${fieldInput("p-faculty-" + i, t("admin_field_faculty"), p.faculty)}
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>${t("admin_field_degree")}</label>
+                <select id="p-degree-${i}">
+                  <option value="bachelor" ${p.degree === "bachelor" ? "selected" : ""}>${t("degree_bachelor")}</option>
+                  <option value="master" ${p.degree === "master" ? "selected" : ""}>${t("degree_master")}</option>
+                  <option value="phd" ${p.degree === "phd" ? "selected" : ""}>${t("degree_phd")}</option>
+                </select>
+              </div>
+              ${fieldInput("p-lang-" + i, t("uni_languages"), p.language)}
+              ${fieldInput("p-years-" + i, t("admin_field_duration"), p.duration_years, "number")}
+            </div>
+            ${fieldInput("p-tuition-" + i, t("admin_field_tuition"), p.tuition_note)}
+            ${fieldInput("p-desc-" + i, t("admin_field_description"), p.description, "textarea")}
+            ${fieldInput("p-entry-" + i, t("admin_field_entry"), p.entry_requirements, "textarea")}
+            ${fieldInput("p-career-" + i, t("admin_field_career"), p.career_note, "textarea")}
+            ${fieldInput("p-active-" + i, t("admin_field_active"), p.active, "checkbox")}
+            <button type="submit" class="btn btn-sm">${t("application_save")}</button>
+            <button type="button" class="btn btn-danger btn-sm" data-del-program="${i}">${t("admin_delete_program")}</button>
+            <span class="form-msg success" id="p-msg-${i}"></span>
+          </form>`
+          )
+          .join("")}
+        <button type="button" class="btn btn-secondary spaced-top" id="add-program-btn">${t("admin_program_add")}</button>
+      </div>`
+          : ""
+      }`;
+    bindAdminNav();
+    document.getElementById("back-unis").addEventListener("click", async () => {
+      state.view = "list";
+      state.tab = "unis";
+      await loadUniversities();
+      render();
+    });
+    document.getElementById("uni-name").addEventListener("input", (e) => {
+      const slug = document.getElementById("uni-slug");
+      if (!u.id || !slug.value) slug.value = slugify(e.target.value);
+    });
+    document.getElementById("uni-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById("uni-name").value.trim(),
+        slug: document.getElementById("uni-slug").value.trim() || slugify(document.getElementById("uni-name").value),
+        city: document.getElementById("uni-city").value.trim() || null,
+        kind: document.getElementById("uni-kind").value,
+        founded_year: document.getElementById("uni-founded").value ? Number(document.getElementById("uni-founded").value) : null,
+        website: document.getElementById("uni-website").value.trim() || null,
+        instruction_languages: document.getElementById("uni-languages").value.trim() || null,
+        student_count: document.getElementById("uni-students").value.trim() || null,
+        tuition_range: document.getElementById("uni-tuition").value.trim() || null,
+        housing: document.getElementById("uni-housing").value.trim() || null,
+        about: document.getElementById("uni-about").value.trim() || null,
+        admission_requirements: document.getElementById("uni-admission").value.trim() || null,
+        city_life: document.getElementById("uni-city-life").value.trim() || null,
+        rota_note: document.getElementById("uni-rota-note").value.trim() || null,
+        active: document.getElementById("uni-active").checked,
+      };
+      const msg = document.getElementById("uni-save-msg");
+      let error;
+      if (u.id) {
+        ({ error } = await sb().from("universities").update(payload).eq("id", u.id));
+      } else {
+        const { data, error: insErr } = await sb().from("universities").insert(payload).select().single();
+        error = insErr;
+        if (!error) state.editUniversity = { ...data, programs: [] };
+      }
+      msg.textContent = error ? error.message : t("admin_university_saved");
+      msg.className = error ? "form-msg error" : "form-msg success";
+      if (!error && !u.id) {
+        state.view = "uni-edit";
+        render();
+      }
+    });
+    document.getElementById("add-program-btn")?.addEventListener("click", async () => {
+      const { data, error } = await sb()
+        .from("programs")
+        .insert({ university_id: state.editUniversity.id, name: t("admin_program_add"), degree: "bachelor" })
+        .select()
+        .single();
+      if (error) return alert(error.message);
+      state.editPrograms.push(data);
+      render();
+    });
+    document.querySelectorAll(".program-edit").forEach((form) => {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const i = Number(form.getAttribute("data-program-index"));
+        const p = state.editPrograms[i];
+        const payload = {
+          name: document.getElementById("p-name-" + i).value.trim(),
+          faculty: document.getElementById("p-faculty-" + i).value.trim() || null,
+          degree: document.getElementById("p-degree-" + i).value,
+          language: document.getElementById("p-lang-" + i).value.trim() || null,
+          duration_years: document.getElementById("p-years-" + i).value ? Number(document.getElementById("p-years-" + i).value) : null,
+          tuition_note: document.getElementById("p-tuition-" + i).value.trim() || null,
+          description: document.getElementById("p-desc-" + i).value.trim() || null,
+          entry_requirements: document.getElementById("p-entry-" + i).value.trim() || null,
+          career_note: document.getElementById("p-career-" + i).value.trim() || null,
+          active: document.getElementById("p-active-" + i).checked,
+        };
+        const { error } = await sb().from("programs").update(payload).eq("id", p.id);
+        const msg = document.getElementById("p-msg-" + i);
+        msg.textContent = error ? error.message : t("admin_program_saved");
+        msg.className = error ? "form-msg error" : "form-msg success";
+        if (!error) Object.assign(p, payload);
+      });
+    });
+    document.querySelectorAll("[data-del-program]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm(t("admin_confirm_delete_program"))) return;
+        const i = Number(btn.getAttribute("data-del-program"));
+        const p = state.editPrograms[i];
+        const { error } = await sb().from("programs").delete().eq("id", p.id);
+        if (error) return alert(error.message);
+        state.editPrograms.splice(i, 1);
+        render();
+      });
+    });
   }
 
   function statusBadge_forApp(status) {
@@ -183,18 +525,28 @@
     });
     document.getElementById("add-doctype-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const label = document.getElementById("new-doctype-label").value.trim();
-      if (!label) return;
-      const slug = label
+      const labelTr = document.getElementById("new-doctype-tr").value.trim();
+      const labelEn = document.getElementById("new-doctype-en").value.trim();
+      if (!labelTr || !labelEn) return;
+      const labelAr = document.getElementById("new-doctype-ar").value.trim() || labelEn;
+      const labelFa = document.getElementById("new-doctype-fa").value.trim() || labelEn;
+      const labelRu = document.getElementById("new-doctype-ru").value.trim() || labelEn;
+      const slug = labelEn
         .toLowerCase()
         .normalize("NFD")
         .replace(/[̀-ͯ]/g, "")
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
       const key = `${slug || "belge"}-${Date.now().toString(36)}`;
-      const { error } = await sb()
-        .from("document_types")
-        .insert({ key, label_tr: label, label_en: label, sort_order: state.documentTypesAll.length + 1 });
+      const { error } = await sb().from("document_types").insert({
+        key,
+        label_tr: labelTr,
+        label_en: labelEn,
+        label_ar: labelAr,
+        label_fa: labelFa,
+        label_ru: labelRu,
+        sort_order: state.documentTypesAll.length + 1,
+      });
       if (error) return alert(error.message);
       await loadDocumentTypesAll();
       renderList();
@@ -259,6 +611,7 @@
             <span class="muted">${profile.email || ""}</span><br/>
             <span class="muted">${profile.phone || ""}</span><br/>
             <span class="muted">${profile.nationality || ""}</span>
+            <p class="spaced-top">${application.target_university || "—"} · ${application.target_program || "—"}</p>
           </div>
           <div>
             <div class="field">
@@ -378,6 +731,10 @@
     window.rotaAuth.renderRoleBadge(state.profile);
     if (state.view === "detail" && state.detail) {
       renderDetail();
+    } else if (state.view === "uni-edit" && state.editUniversity) {
+      renderUniversityEdit();
+    } else if (state.tab === "unis") {
+      renderUniversityList();
     } else {
       renderList();
     }

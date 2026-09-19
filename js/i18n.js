@@ -46,6 +46,8 @@ window.ROTA_I18N = {
     document_status_rejected: "Reddedildi",
     document_upload: "Yükle",
     document_replace: "Yeniden Yükle",
+    document_delete: "Sil",
+    document_delete_confirm: "Bu evrak silinsin mi?",
     document_optional_label: "(opsiyonel)",
     document_view: "Görüntüle",
     document_review_note: "Not",
@@ -70,6 +72,7 @@ window.ROTA_I18N = {
     admin_reject_note_prompt: "Red nedeni (öğrenciye gösterilecek):",
     admin_document_types_title: "Evrak Türleri",
     admin_document_type_new_placeholder: "Yeni evrak türü adı (TR)",
+    admin_document_type_optional_hint: "Boş bırakılırsa İngilizce kullanılır.",
     admin_document_type_add: "Ekle",
     admin_document_type_deactivate: "Pasifleştir",
     admin_document_type_activate: "Aktifleştir",
@@ -129,6 +132,8 @@ window.ROTA_I18N = {
     document_status_rejected: "Rejected",
     document_upload: "Upload",
     document_replace: "Replace",
+    document_delete: "Delete",
+    document_delete_confirm: "Delete this document?",
     document_optional_label: "(optional)",
     document_view: "View",
     document_review_note: "Note",
@@ -153,6 +158,7 @@ window.ROTA_I18N = {
     admin_reject_note_prompt: "Rejection reason (shown to student):",
     admin_document_types_title: "Document Types",
     admin_document_type_new_placeholder: "New document type name (EN)",
+    admin_document_type_optional_hint: "Defaults to English if left blank.",
     admin_document_type_add: "Add",
     admin_document_type_deactivate: "Deactivate",
     admin_document_type_activate: "Activate",
@@ -212,6 +218,8 @@ window.ROTA_I18N = {
     document_status_rejected: "مرفوض",
     document_upload: "رفع",
     document_replace: "استبدال",
+    document_delete: "حذف",
+    document_delete_confirm: "هل تريد حذف هذا المستند؟",
     document_optional_label: "(اختياري)",
     document_view: "عرض",
     document_review_note: "ملاحظة",
@@ -236,6 +244,7 @@ window.ROTA_I18N = {
     admin_reject_note_prompt: "سبب الرفض (سيظهر للطالب):",
     admin_document_types_title: "أنواع المستندات",
     admin_document_type_new_placeholder: "اسم نوع مستند جديد",
+    admin_document_type_optional_hint: "إذا تُرك فارغًا، سيتم استخدام الإنجليزية.",
     admin_document_type_add: "إضافة",
     admin_document_type_deactivate: "تعطيل",
     admin_document_type_activate: "تفعيل",
@@ -295,6 +304,8 @@ window.ROTA_I18N = {
     document_status_rejected: "رد شد",
     document_upload: "بارگذاری",
     document_replace: "جایگزینی",
+    document_delete: "حذف",
+    document_delete_confirm: "این مدرک حذف شود؟",
     document_optional_label: "(اختیاری)",
     document_view: "مشاهده",
     document_review_note: "یادداشت",
@@ -319,6 +330,7 @@ window.ROTA_I18N = {
     admin_reject_note_prompt: "دلیل رد (به دانشجو نمایش داده می‌شود):",
     admin_document_types_title: "انواع مدارک",
     admin_document_type_new_placeholder: "نام نوع مدرک جدید",
+    admin_document_type_optional_hint: "در صورت خالی گذاشتن، از انگلیسی استفاده می‌شود.",
     admin_document_type_add: "افزودن",
     admin_document_type_deactivate: "غیرفعال کردن",
     admin_document_type_activate: "فعال کردن",
@@ -378,6 +390,8 @@ window.ROTA_I18N = {
     document_status_rejected: "Отклонено",
     document_upload: "Загрузить",
     document_replace: "Заменить",
+    document_delete: "Удалить",
+    document_delete_confirm: "Удалить этот документ?",
     document_optional_label: "(необязательно)",
     document_view: "Просмотр",
     document_review_note: "Примечание",
@@ -402,6 +416,7 @@ window.ROTA_I18N = {
     admin_reject_note_prompt: "Причина отклонения (будет видна студенту):",
     admin_document_types_title: "Типы документов",
     admin_document_type_new_placeholder: "Название нового типа документа",
+    admin_document_type_optional_hint: "Если оставить пустым, используется английский.",
     admin_document_type_add: "Добавить",
     admin_document_type_deactivate: "Деактивировать",
     admin_document_type_activate: "Активировать",
@@ -465,14 +480,18 @@ window.ROTA_RTL_LANGS = ["ar", "fa"];
       el.value = lang;
     });
   }
+  const DOCTYPE_LANG_COLUMN = { tr: "label_tr", en: "label_en", ar: "label_ar", fa: "label_fa", ru: "label_ru" };
+
   // Varsayılan (seed edilen) evrak türleri için doctype_<key> çevirisi varsa
-  // onu kullanır; admin panelinden sonradan eklenen özel evrak türleri için
-  // (çevirisi olmadığından) veritabanındaki label_tr/label_en'e döner.
+  // onu kullanır (eski veritabanlarıyla da geriye dönük uyumlu olsun diye);
+  // aksi halde veritabanındaki seçili dile ait sütuna, o boşsa İngilizce/
+  // Türkçe'ye döner.
   function docTypeLabel(documentType) {
     const i18nKey = "doctype_" + documentType.key;
     const translated = t(i18nKey);
     if (translated !== i18nKey) return translated;
-    return getLang() === "tr" ? documentType.label_tr : documentType.label_en;
+    const col = DOCTYPE_LANG_COLUMN[getLang()];
+    return (col && documentType[col]) || documentType.label_en || documentType.label_tr;
   }
   window.rotaI18n = { t, getLang, setLang, applyI18n, docTypeLabel };
   document.addEventListener("DOMContentLoaded", applyI18n);

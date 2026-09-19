@@ -79,6 +79,8 @@ create table public.applications (
     check (status in ('pre_registration', 'documents_pending', 'under_review', 'accepted', 'completed')),
   target_program text,
   target_university text,
+  university_id uuid,
+  program_id uuid,
   notes text,
   acceptance_letter_path text,
   created_at timestamptz not null default now(),
@@ -182,6 +184,9 @@ create table public.document_types (
   key text not null unique,
   label_tr text not null,
   label_en text not null,
+  label_ar text,
+  label_fa text,
+  label_ru text,
   required boolean not null default true,
   active boolean not null default true,
   sort_order int not null default 0
@@ -198,11 +203,11 @@ create policy "document_types_write_admin_only"
   using (public.is_admin(auth.uid()))
   with check (public.is_admin(auth.uid()));
 
-insert into public.document_types (key, label_tr, label_en, required, sort_order) values
-  ('passport', 'Pasaport', 'Passport', true, 1),
-  ('diploma_transcript', 'Diploma / Transkript', 'Diploma / Transcript', true, 2),
-  ('photo', 'Vesikalık Fotoğraf', 'Photo', true, 3),
-  ('language_certificate', 'Dil Sertifikası', 'Language Certificate', false, 4);
+insert into public.document_types (key, label_tr, label_en, label_ar, label_fa, label_ru, required, sort_order) values
+  ('passport', 'Pasaport', 'Passport', 'جواز السفر', 'گذرنامه', 'Паспорт', true, 1),
+  ('diploma_transcript', 'Diploma / Transkript', 'Diploma / Transcript', 'الشهادة / كشف الدرجات', 'مدرک تحصیلی / ریز نمرات', 'Диплом / Транскрипт', true, 2),
+  ('photo', 'Vesikalık Fotoğraf', 'Photo', 'صورة شخصية', 'عکس پرسنلی', 'Фото', true, 3),
+  ('language_certificate', 'Dil Sertifikası', 'Language Certificate', 'شهادة اللغة', 'مدرک زبان', 'Сертификат владения языком', false, 4);
 
 -- =========================================================================
 -- 4) documents — öğrencinin her evrak türü için yüklediği dosya + durumu
@@ -243,6 +248,13 @@ create policy "documents_update_own_or_admin"
     or exists (select 1 from public.applications a where a.id = application_id and a.student_id = auth.uid())
   )
   with check (
+    public.is_admin(auth.uid())
+    or exists (select 1 from public.applications a where a.id = application_id and a.student_id = auth.uid())
+  );
+
+create policy "documents_delete_own_or_admin"
+  on public.documents for delete
+  using (
     public.is_admin(auth.uid())
     or exists (select 1 from public.applications a where a.id = application_id and a.student_id = auth.uid())
   );
@@ -300,7 +312,82 @@ create trigger trg_enforce_document_update
   for each row execute function public.enforce_document_update();
 
 -- =========================================================================
--- 5) Storage: özel (private) "documents" bucket'ı, öğrenci_id klasörlemesi
+-- 5) universities / programs — anlaşmalı üniversite kataloğu (öğrenci vitrini)
+--     Öğrenci üniversiteye değil Rota'ya başvurur; katalog tercih ve tanıtım içindir.
+-- =========================================================================
+create table public.universities (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  name text not null,
+  city text,
+  kind text not null default 'public' check (kind in ('public', 'private')),
+  founded_year int,
+  website text,
+  instruction_languages text,
+  student_count text,
+  tuition_range text,
+  housing text,
+  about text,
+  admission_requirements text,
+  city_life text,
+  rota_note text,
+  active boolean not null default true,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+alter table public.universities enable row level security;
+
+create policy "universities_select_active_or_admin"
+  on public.universities for select
+  using (active or public.is_admin(auth.uid()));
+
+create policy "universities_write_admin_only"
+  on public.universities for all
+  using (public.is_admin(auth.uid()))
+  with check (public.is_admin(auth.uid()));
+
+create table public.programs (
+  id uuid primary key default gen_random_uuid(),
+  university_id uuid not null references public.universities(id) on delete cascade,
+  name text not null,
+  faculty text,
+  degree text not null default 'bachelor' check (degree in ('bachelor', 'master', 'phd')),
+  language text,
+  duration_years numeric,
+  tuition_note text,
+  description text,
+  entry_requirements text,
+  career_note text,
+  active boolean not null default true,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+alter table public.programs enable row level security;
+
+create policy "programs_select_active_or_admin"
+  on public.programs for select
+  using (active or public.is_admin(auth.uid()));
+
+create policy "programs_write_admin_only"
+  on public.programs for all
+  using (public.is_admin(auth.uid()))
+  with check (public.is_admin(auth.uid()));
+
+alter table public.applications
+  add constraint applications_university_id_fkey
+    foreign key (university_id) references public.universities(id) on delete set null,
+  add constraint applications_program_id_fkey
+    foreign key (program_id) references public.programs(id) on delete set null;
+
+grant select on public.universities to anon, authenticated;
+grant select on public.programs to anon, authenticated;
+grant insert, update, delete on public.universities to authenticated;
+grant insert, update, delete on public.programs to authenticated;
+
+-- =========================================================================
+-- 6) Storage: özel (private) "documents" bucket'ı, öğrenci_id klasörlemesi
 --    Dosya yolu biçimi: <student_id>/<belge-adı>
 -- =========================================================================
 insert into storage.buckets (id, name, public)
@@ -323,6 +410,13 @@ create policy "storage_documents_insert_own_or_admin"
 
 create policy "storage_documents_update_own_or_admin"
   on storage.objects for update
+  using (
+    bucket_id = 'documents'
+    and (public.is_admin(auth.uid()) or (storage.foldername(name))[1] = auth.uid()::text)
+  );
+
+create policy "storage_documents_delete_own_or_admin"
+  on storage.objects for delete
   using (
     bucket_id = 'documents'
     and (public.is_admin(auth.uid()) or (storage.foldername(name))[1] = auth.uid()::text)

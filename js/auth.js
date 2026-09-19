@@ -69,7 +69,7 @@
   async function requireRole(role) {
     const result = await getCurrentProfile();
     if (!result || result.profile.role !== role) {
-      window.location.href = "index.html";
+      window.location.href = "account.html";
       return null;
     }
     return result;
