@@ -40,70 +40,138 @@ a {
 
 /* Header */
 .site-header {
-  background: var(--primary);
-  color: #fff;
+  background: #fff;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
 }
 .site-header .container {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 1fr);
   align-items: center;
-  justify-content: space-between;
-  padding-top: 16px;
-  padding-bottom: 16px;
+  gap: 16px;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 10px 24px;
+  min-height: 72px;
 }
 .brand {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
   text-decoration: none;
-  letter-spacing: 0.2px;
+  line-height: 0;
+  justify-self: start;
 }
-.header-link {
-  color: #fff;
-  text-decoration: none;
-  font-size: 0.88rem;
-  opacity: 0.9;
-}
-.header-link:hover {
-  opacity: 1;
-  text-decoration: underline;
+.brand-logo {
+  display: block;
+  height: 56px;
+  width: auto;
+  max-width: min(280px, 42vw);
+  object-fit: contain;
 }
 .header-actions {
+  display: contents;
+}
+.header-nav {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-self: center;
+  grid-column: 2;
+}
+.header-link {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+.header-link:hover,
+.header-link.is-active {
+  color: var(--primary);
+  background: rgba(30, 58, 95, 0.06);
+  text-decoration: none;
+}
+.header-account {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  justify-self: end;
+  grid-column: 3;
 }
 .role-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 20px;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
+  background: rgba(30, 58, 95, 0.06);
+  color: var(--primary);
   white-space: nowrap;
+  max-width: 200px;
+  border: 1px solid transparent;
+}
+.role-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.role-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.15;
+  min-width: 0;
+}
+.role-fullname {
+  font-weight: 600;
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 .role-badge .role-name {
-  font-weight: 400;
-  opacity: 0.85;
+  font-weight: 500;
+  font-size: 0.68rem;
+  opacity: 0.7;
 }
 .role-badge.role-admin {
+  background: rgba(201, 162, 39, 0.16);
+  color: var(--primary-dark);
+}
+.role-badge.role-admin .role-avatar {
   background: var(--accent);
   color: var(--primary-dark);
 }
-.role-badge.role-admin .role-name {
-  opacity: 0.75;
-}
 .role-badge.role-badge-clickable {
   cursor: pointer;
-  border: none;
 }
 .role-badge.role-badge-clickable:hover {
-  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(30, 58, 95, 0.12);
+  background: rgba(30, 58, 95, 0.1);
 }
 .role-badge.role-admin.role-badge-clickable:hover {
-  filter: brightness(0.96);
+  filter: none;
+  border-color: rgba(201, 162, 39, 0.45);
 }
 .profile-popover {
   position: absolute;
@@ -111,7 +179,7 @@ a {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: 0 8px 24px rgba(20, 41, 68, 0.12);
   padding: 14px 16px;
   min-width: 230px;
   font-size: 0.85rem;
@@ -137,28 +205,78 @@ a {
   flex-shrink: 0;
 }
 .lang-select {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #fff;
-  border-radius: 6px;
-  padding: 5px 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 7px 10px;
   font-size: 0.82rem;
   cursor: pointer;
+  min-height: 36px;
+}
+.lang-select:hover {
+  border-color: #c5cad3;
 }
 .lang-select option {
   color: #000;
 }
 .btn-logout {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  color: #fff;
-  padding: 6px 14px;
-  border-radius: 6px;
+  border: 1px solid var(--border);
+  color: var(--primary);
+  padding: 7px 14px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 .btn-logout:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(30, 58, 95, 0.06);
+  border-color: #c5cad3;
+  color: var(--primary-dark);
+}
+#auth-slot a.btn-logout[href="account.html"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+#auth-slot a.btn-logout[href="account.html"]:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .site-header .container {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand account"
+      "nav nav";
+  }
+  .brand {
+    grid-area: brand;
+  }
+  .header-nav {
+    grid-area: nav;
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+  .header-account {
+    grid-area: account;
+    grid-column: auto;
+  }
+  .role-fullname {
+    max-width: 90px;
+  }
+  .brand-logo {
+    height: 48px;
+  }
 }
 
 main {
@@ -416,24 +534,32 @@ main {
 /* Admin table */
 .table-toolbar {
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
   flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 .table-toolbar input,
 .table-toolbar select {
-  padding: 9px 12px;
+  padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.9rem;
+  background: #fff;
 }
 .table-toolbar input {
-  flex: 1;
-  min-width: 220px;
+  flex: 1 1 220px;
+  min-width: 180px;
 }
-table.data-table {
-  width: 100%;
-  border-collapse: collapse;
+.table-toolbar select {
+  flex: 0 1 auto;
+  min-width: 140px;
+}
+table.data-table td.col-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+table.data-table tr.row-unpublished td {
+  color: var(--text-muted);
 }
 table.data-table th,
 table.data-table td {
@@ -494,14 +620,33 @@ table.data-table tbody tr:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 0;
+  gap: 12px;
+  padding: 10px 0;
   border-bottom: 1px solid var(--border);
 }
 .doctype-row:last-child {
   border-bottom: none;
 }
 .doctype-row.inactive {
-  opacity: 0.5;
+  opacity: 0.55;
+}
+.doctype-row.editing {
+  align-items: stretch;
+  flex-direction: column;
+  opacity: 1;
+}
+.doctype-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+.doctype-edit-form {
+  width: 100%;
+}
+.doctype-edit-form .doctype-actions {
+  margin-top: 8px;
 }
 
 @media (max-width: 640px) {
@@ -570,6 +715,50 @@ table.data-table tbody tr:hover {
   padding: 12px 14px;
   font-size: 0.9rem;
   margin: 20px 0;
+}
+.page-narrow {
+  max-width: 860px;
+  margin: 0 auto;
+}
+.page-narrow h1 {
+  margin: 0 0 18px;
+  font-size: 1.6rem;
+  color: var(--primary);
+}
+.info-section h2 {
+  margin: 0 0 18px;
+  font-size: 1.35rem;
+  color: var(--primary);
+}
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 14px;
+}
+.how-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.how-card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: var(--primary);
+}
+.how-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.contact-section p {
+  max-width: 640px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.contact-section .btn {
+  margin-top: 8px;
 }
 .uni-grid {
   display: grid;

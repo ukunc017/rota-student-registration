@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 148" role="img" aria-label="RotaEdu Turkey">
+  <g fill="#1e3a5f">
+    <!-- Cap top -->
+    <path d="M52 6 L92 22 L52 38 L12 22 Z"/>
+    <!-- Cap band -->
+    <path d="M24 24 v10 c0 8 12 14 28 14 s28-6 28-14 V24" fill="none" stroke="#1e3a5f" stroke-width="6" stroke-linejoin="round"/>
+    <!-- Tassel -->
+    <rect x="82" y="22" width="3.5" height="20" rx="1.5"/>
+    <circle cx="83.75" cy="45" r="4"/>
+
+    <!-- Badge ring -->
+    <circle cx="52" cy="94" r="42" fill="none" stroke="#1e3a5f" stroke-width="8"/>
+
+    <!-- Compass rose -->
+    <polygon points="52,58 58,90 52,85 46,90"/>
+    <polygon points="52,130 46,98 52,103 58,98"/>
+    <polygon points="28,94 52,88 52,94 52,100"/>
+    <polygon points="76,94 52,100 52,94 52,88"/>
+    <polygon points="34,76 50,90 46,94 38,86"/>
+    <polygon points="70,76 54,90 58,94 66,86"/>
+    <polygon points="34,112 38,102 52,98 46,94"/>
+    <polygon points="70,112 66,102 52,98 58,94"/>
+    <circle cx="52" cy="94" r="6"/>
+  </g>
+
+  <g fill="#1e3a5f" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+    <text x="118" y="64" font-size="46" font-weight="800" letter-spacing="-0.6">RotaEdu</text>
+    <text x="118" y="106" font-size="46" font-weight="800" letter-spacing="-0.6">Turkey</text>
+    <text x="118" y="132" font-size="13.5" font-weight="700" letter-spacing="1.5">YOUR PATHWAY TO TURKISH EDUCATION</text>
+  </g>
+</svg>

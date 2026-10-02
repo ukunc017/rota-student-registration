@@ -25,6 +25,8 @@
   }
 
   async function signOut() {
+    const msg = window.rotaI18n?.t("nav_logout_confirm") || "Log out?";
+    if (!confirm(msg)) return;
     await sb().auth.signOut();
     window.location.href = "index.html";
   }
@@ -83,11 +85,17 @@
     if (!el || !profile) return;
     const label = window.rotaI18n.t(profile.role === "admin" ? "role_admin" : "role_student");
     const name = profile.full_name || profile.email || "";
-    el.innerHTML = `${name ? name + " " : ""}<span class="role-name">· ${label}</span>`;
+    const initials = (name.match(/\p{L}+/gu) || [name])
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase() || "?";
+    el.innerHTML = `<span class="role-avatar" aria-hidden="true">${initials}</span><span class="role-meta"><span class="role-fullname">${name}</span><span class="role-name">${label}</span></span>`;
     el.hidden = false;
     el.classList.add("role-badge-clickable");
     el.setAttribute("role", "button");
     el.setAttribute("tabindex", "0");
+    el.setAttribute("aria-label", name ? `${name}, ${label}` : label);
     el.onclick = () => toggleProfilePopover(el, profile);
   }
 

@@ -9,9 +9,15 @@
 <body data-page="catalog">
   <header class="site-header">
     <div class="container">
-      <a class="brand" href="index.html" data-i18n="app_name">Rota Education Consultancy</a>
-      <div class="header-actions">
-        <a class="header-link" href="index.html" data-i18n="nav_universities">Üniversiteler</a>
+      <a class="brand" href="index.html" aria-label="RotaEdu Turkey">
+        <img class="brand-logo" src="assets/logo.svg" alt="RotaEdu Turkey — Your pathway to Turkish education" />
+      </a>
+      <nav class="header-nav" aria-label="Main">
+        <a class="header-link is-active" href="index.html" data-i18n="nav_universities">Üniversiteler</a>
+        <a class="header-link" href="how-it-works.html" data-i18n="nav_how_it_works">Nasıl çalışır</a>
+        <a class="header-link" href="contact.html" data-i18n="nav_contact">İletişim</a>
+      </nav>
+      <div class="header-account">
         <select class="lang-select" data-lang-select onchange="rotaI18n.setLang(this.value); location.reload()"></select>
         <span id="auth-slot"></span>
       </div>

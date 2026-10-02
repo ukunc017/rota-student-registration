@@ -15,7 +15,9 @@
     profile: null,
     applications: [],
     documentTypesAll: [],
+    docTypeUsage: {},
     filterStatus: "",
+    filterYear: String(new Date().getFullYear()),
     search: "",
     selectedId: null,
     detail: null,
@@ -23,6 +25,7 @@
     universities: [],
     editUniversity: null,
     editPrograms: [],
+    editingDocTypeId: null,
   };
 
   async function loadApplications() {
@@ -91,6 +94,12 @@
     const { data, error } = await sb().from("document_types").select("*").order("sort_order");
     if (error) throw error;
     state.documentTypesAll = data || [];
+    const { data: docs } = await sb().from("documents").select("document_type_id");
+    const usage = {};
+    (docs || []).forEach((d) => {
+      usage[d.document_type_id] = (usage[d.document_type_id] || 0) + 1;
+    });
+    state.docTypeUsage = usage;
   }
 
   async function loadDetail(applicationId) {
@@ -131,14 +140,56 @@
   }
 
   // ---------------------------------------------------------------- LIST --
+  function availableYears() {
+    const years = new Set(state.applications.map((a) => new Date(a.created_at).getFullYear()));
+    years.add(new Date().getFullYear());
+    return [...years].sort((a, b) => b - a);
+  }
+
   function filteredApplications() {
     const q = state.search.trim().toLowerCase();
+    const year = state.filterYear ? Number(state.filterYear) : null;
     return state.applications.filter((a) => {
       if (state.filterStatus && a.status !== state.filterStatus) return false;
+      if (year && new Date(a.created_at).getFullYear() !== year) return false;
       if (!q) return true;
       const hay = `${a.profile?.full_name || ""} ${a.profile?.email || ""} ${a.profile?.nationality || ""} ${a.target_university || ""} ${a.target_program || ""}`.toLowerCase();
       return hay.includes(q);
     });
+  }
+
+  function renderDocTypeEditor(dt) {
+    return `
+      <form class="doctype-edit-form" data-edit-doctype-form="${dt.id}">
+        <div class="row">
+          <div class="field">
+            <label>Türkçe *</label>
+            <input type="text" name="label_tr" value="${esc(dt.label_tr || "")}" required />
+          </div>
+          <div class="field">
+            <label>English *</label>
+            <input type="text" name="label_en" value="${esc(dt.label_en || "")}" required />
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>العربية</label>
+            <input type="text" name="label_ar" value="${esc(dt.label_ar || "")}" dir="rtl" />
+          </div>
+          <div class="field">
+            <label>فارسی</label>
+            <input type="text" name="label_fa" value="${esc(dt.label_fa || "")}" dir="rtl" />
+          </div>
+          <div class="field">
+            <label>Русский</label>
+            <input type="text" name="label_ru" value="${esc(dt.label_ru || "")}" />
+          </div>
+        </div>
+        <div class="doctype-actions">
+          <button type="submit" class="btn btn-sm">${t("admin_document_type_save")}</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-cancel-edit-doctype>${t("admin_document_type_cancel")}</button>
+        </div>
+      </form>`;
   }
 
   function renderDocTypeManager() {
@@ -146,17 +197,27 @@
       <div class="card">
         <h2>${t("admin_document_types_title")}</h2>
         ${state.documentTypesAll
-          .map(
-            (dt) => `
+          .map((dt) => {
+            if (state.editingDocTypeId === dt.id) {
+              return `<div class="doctype-row editing ${dt.active ? "" : "inactive"}">${renderDocTypeEditor(dt)}</div>`;
+            }
+            const used = state.docTypeUsage[dt.id] || 0;
+            return `
           <div class="doctype-row ${dt.active ? "" : "inactive"}">
-            <span>${dt.label_tr} / ${dt.label_en}${dt.label_ar ? " / " + dt.label_ar : ""}${
-              dt.label_fa ? " / " + dt.label_fa : ""
-            }${dt.label_ru ? " / " + dt.label_ru : ""}</span>
-            <button type="button" class="btn btn-secondary btn-sm" data-toggle-doctype="${dt.id}" data-active="${dt.active}">
-              ${dt.active ? t("admin_document_type_deactivate") : t("admin_document_type_activate")}
-            </button>
-          </div>`
-          )
+            <span>${esc(dt.label_tr)} / ${esc(dt.label_en)}${dt.label_ar ? " / " + esc(dt.label_ar) : ""}${
+              dt.label_fa ? " / " + esc(dt.label_fa) : ""
+            }${dt.label_ru ? " / " + esc(dt.label_ru) : ""}</span>
+            <div class="doctype-actions">
+              <button type="button" class="btn btn-secondary btn-sm" data-edit-doctype="${dt.id}">${t("admin_document_type_edit")}</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-toggle-doctype="${dt.id}" data-active="${dt.active}">
+                ${dt.active ? t("admin_document_type_deactivate") : t("admin_document_type_activate")}
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" data-delete-doctype="${dt.id}" data-used="${used}" ${
+                used > 0 ? "disabled title=\"" + esc(t("admin_document_type_delete_in_use")) + "\"" : ""
+              }>${t("admin_document_type_delete")}</button>
+            </div>
+          </div>`;
+          })
           .join("")}
         <form id="add-doctype-form" class="spaced-top">
           <div class="row">
@@ -199,7 +260,13 @@
         <div class="table-toolbar">
           <input type="text" id="search-input" data-i18n-placeholder="admin_search_placeholder" placeholder="${t(
             "admin_search_placeholder"
-          )}" value="${state.search}" />
+          )}" value="${esc(state.search)}" />
+          <select id="year-filter" aria-label="${t("admin_filter_year")}">
+            <option value="">${t("admin_filter_all_years")}</option>
+            ${availableYears()
+              .map((y) => `<option value="${y}" ${state.filterYear === String(y) ? "selected" : ""}>${y}</option>`)
+              .join("")}
+          </select>
           <select id="status-filter">
             <option value="">${t("admin_filter_all_status")}</option>
             ${STATUS_ORDER.map(
@@ -217,6 +284,7 @@
                     <th>${t("application_choose_university")}</th>
                     <th>${t("admin_table_nationality")}</th>
                     <th>${t("admin_table_status")}</th>
+                    <th>${t("admin_table_registered")}</th>
                     <th>${t("admin_table_updated")}</th>
                   </tr>
                 </thead>
@@ -225,10 +293,11 @@
                     .map(
                       (a) => `
                     <tr data-open-app="${a.id}">
-                      <td>${a.profile?.full_name || "—"}<br/><span class="muted">${a.profile?.email || ""}</span></td>
-                      <td>${a.target_university || "—"}<br/><span class="muted">${a.target_program || ""}</span></td>
-                      <td>${a.profile?.nationality || "—"}</td>
+                      <td>${esc(a.profile?.full_name || "—")}<br/><span class="muted">${esc(a.profile?.email || "")}</span></td>
+                      <td>${esc(a.target_university || "—")}<br/><span class="muted">${esc(a.target_program || "")}</span></td>
+                      <td>${esc(a.profile?.nationality || "—")}</td>
                       <td>${statusBadge_forApp(a.status)}</td>
+                      <td>${fmtDate(a.created_at)}</td>
                       <td>${fmtDate(a.updated_at)}</td>
                     </tr>`
                     )
@@ -264,18 +333,28 @@
                     <th>${t("admin_field_name")}</th>
                     <th>${t("admin_field_city")}</th>
                     <th>${t("admin_programs_title")}</th>
-                    <th>${t("admin_field_active")}</th>
+                    <th>${t("admin_publish_status")}</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   ${state.universities
                     .map(
                       (u) => `
-                    <tr data-edit-uni="${u.id}">
+                    <tr data-edit-uni="${u.id}" class="${u.active ? "" : "row-unpublished"}">
                       <td>${esc(u.name)}</td>
                       <td>${esc(u.city || "—")}</td>
                       <td>${u.programs.length}</td>
-                      <td>${u.active ? t("admin_field_active") : t("admin_document_type_deactivate")}</td>
+                      <td>
+                        <span class="badge ${u.active ? "badge-approved" : "badge-missing"}">
+                          ${u.active ? t("admin_status_published") : t("admin_status_draft")}
+                        </span>
+                      </td>
+                      <td class="col-actions">
+                        <button type="button" class="btn ${u.active ? "btn-secondary" : ""} btn-sm" data-toggle-publish="${u.id}" data-active="${u.active}">
+                          ${u.active ? t("admin_unpublish") : t("admin_publish")}
+                        </button>
+                      </td>
                     </tr>`
                     )
                     .join("")}
@@ -301,7 +380,7 @@
         admission_requirements: "",
         city_life: "",
         rota_note: "",
-        active: true,
+        active: false,
       };
       state.editPrograms = [];
       state.view = "uni-edit";
@@ -314,6 +393,17 @@
         state.editPrograms = (uni.programs || []).map((p) => ({ ...p }));
         state.view = "uni-edit";
         render();
+      });
+    });
+    document.querySelectorAll("[data-toggle-publish]").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute("data-toggle-publish");
+        const active = btn.getAttribute("data-active") === "true";
+        const { error } = await sb().from("universities").update({ active: !active }).eq("id", id);
+        if (error) return alert(error.message);
+        await loadUniversities();
+        renderUniversityList();
       });
     });
   }
@@ -511,6 +601,10 @@
       state.search = e.target.value;
       renderList();
     });
+    document.getElementById("year-filter").addEventListener("change", (e) => {
+      state.filterYear = e.target.value;
+      renderList();
+    });
     document.getElementById("status-filter").addEventListener("change", (e) => {
       state.filterStatus = e.target.value;
       renderList();
@@ -552,11 +646,66 @@
       renderList();
     });
     document.querySelectorAll("[data-toggle-doctype]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
         const id = btn.getAttribute("data-toggle-doctype");
         const active = btn.getAttribute("data-active") === "true";
         const { error } = await sb().from("document_types").update({ active: !active }).eq("id", id);
         if (error) return alert(error.message);
+        await loadDocumentTypesAll();
+        renderList();
+      });
+    });
+    document.querySelectorAll("[data-edit-doctype]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        state.editingDocTypeId = btn.getAttribute("data-edit-doctype");
+        renderList();
+      });
+    });
+    document.querySelectorAll("[data-cancel-edit-doctype]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.editingDocTypeId = null;
+        renderList();
+      });
+    });
+    document.querySelectorAll("[data-edit-doctype-form]").forEach((form) => {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const id = form.getAttribute("data-edit-doctype-form");
+        const labelTr = form.label_tr.value.trim();
+        const labelEn = form.label_en.value.trim();
+        if (!labelTr || !labelEn) return;
+        const labelAr = form.label_ar.value.trim() || labelEn;
+        const labelFa = form.label_fa.value.trim() || labelEn;
+        const labelRu = form.label_ru.value.trim() || labelEn;
+        const { error } = await sb()
+          .from("document_types")
+          .update({
+            label_tr: labelTr,
+            label_en: labelEn,
+            label_ar: labelAr,
+            label_fa: labelFa,
+            label_ru: labelRu,
+          })
+          .eq("id", id);
+        if (error) return alert(error.message);
+        state.editingDocTypeId = null;
+        await loadDocumentTypesAll();
+        renderList();
+      });
+    });
+    document.querySelectorAll("[data-delete-doctype]").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (btn.disabled) return;
+        const id = btn.getAttribute("data-delete-doctype");
+        const used = Number(btn.getAttribute("data-used") || 0);
+        if (used > 0) return alert(t("admin_document_type_delete_in_use"));
+        if (!confirm(t("admin_document_type_delete_confirm"))) return;
+        const { error } = await sb().from("document_types").delete().eq("id", id);
+        if (error) return alert(error.message);
+        if (state.editingDocTypeId === id) state.editingDocTypeId = null;
         await loadDocumentTypesAll();
         renderList();
       });
