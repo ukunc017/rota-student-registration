@@ -101,9 +101,9 @@
 
     function nextUrl(role) {
       const next = new URLSearchParams(location.search).get("next");
-      if (role === "admin") return "admin";
-      if (next === "student" || next === "student.html") return "student";
-      return "student";
+      if (role === "admin") return "admin.html";
+      if (next === "student" || next === "student.html") return "student.html";
+      return "student.html";
     }
 
     async function redirectByRole() {

@@ -52,10 +52,10 @@
         const auth = await window.rotaAuth.getCurrentProfile();
         if (!auth) {
           // serve, .html?query adreslerinde query'yi düşürür; uzantısız kullan
-          window.location.href = "account?next=student";
+          window.location.href = "account.html?next=student";
           return;
         }
-        window.location.href = auth.profile.role === "admin" ? "admin" : "student";
+        window.location.href = auth.profile.role === "admin" ? "admin.html" : "student.html";
       });
     });
   }
@@ -118,7 +118,7 @@
           ${!compact && p.entry_requirements ? `<p><strong>${t("program_entry")}</strong> ${escapeHtml(p.entry_requirements)}</p>` : ""}
           ${!compact && p.career_note ? `<p><strong>${t("program_career")}</strong> ${escapeHtml(p.career_note)}</p>` : ""}
         </div>
-        <a class="btn" href="account?next=student" data-apply-uni="${escapeHtml(uni.id)}" data-apply-program="${escapeHtml(p.id)}">${t("catalog_apply")}</a>
+        <a class="btn" href="account.html?next=student" data-apply-uni="${escapeHtml(uni.id)}" data-apply-program="${escapeHtml(p.id)}">${t("catalog_apply")}</a>
       </article>`;
   }
 
@@ -153,8 +153,8 @@
                 <p>${escapeHtml(snippet(u.about, 160) || t("catalog_no_summary"))}</p>
                 <p class="muted">${u.programs.length} ${t("catalog_program_count")}</p>
                 <div class="uni-card-actions">
-                  <a class="btn btn-secondary" href="university?slug=${encodeURIComponent(u.slug)}">${t("catalog_view")}</a>
-                  <a class="btn" href="account?next=student" data-apply-uni="${escapeHtml(u.id)}" data-apply-program="${escapeHtml((u.programs[0] && u.programs[0].id) || "")}">${t("catalog_apply")}</a>
+                  <a class="btn btn-secondary" href="university.html?slug=${encodeURIComponent(u.slug)}">${t("catalog_view")}</a>
+                  <a class="btn" href="account.html?next=student" data-apply-uni="${escapeHtml(u.id)}" data-apply-program="${escapeHtml((u.programs[0] && u.programs[0].id) || "")}">${t("catalog_apply")}</a>
                 </div>
               </div>
             </article>`
@@ -189,7 +189,7 @@
           <h1>${escapeHtml(uni.name)}</h1>
           <p class="muted">${escapeHtml([uni.city, kindLabel(uni.kind)].filter(Boolean).join(" · "))}</p>
         </div>
-        <a class="btn btn-accent" href="account?next=student" data-apply-uni="${escapeHtml(uni.id)}" data-apply-program="${escapeHtml((uni.programs[0] && uni.programs[0].id) || "")}">${t("catalog_apply")}</a>
+        <a class="btn btn-accent" href="account.html?next=student" data-apply-uni="${escapeHtml(uni.id)}" data-apply-program="${escapeHtml((uni.programs[0] && uni.programs[0].id) || "")}">${t("catalog_apply")}</a>
       </div>
       <p class="rota-callout">${t("catalog_apply_note")}</p>
       ${facts(uni)}
