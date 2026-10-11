@@ -15,8 +15,20 @@
       how_step3_title: "3. Takip edin",
       how_step3_text: "Evrak onayları, süreç durumu ve kabul mektubu tek panelden görünür.",
       contact_title: "İletişim",
-      contact_text: "Başvuru dosyanız üzerinden güncellemeleri takip edebilirsiniz. Hesabınız yoksa önce kayıt olun; danışmanlık ekibi süreç boyunca sizinle iletişime geçer.",
+      contact_text:
+        "Türkiye’de üniversite eğitimi için danışmanlık, evrak ve kabul süreçlerinde yanınızdayız. Aşağıdan bize ulaşabilir veya hesabınız üzerinden başvurunuzu takip edebilirsiniz.",
       contact_cta: "Giriş / Kayıt",
+      contact_about:
+        "Yurt dışından öğrencilerin Türkiye’deki anlaşmalı üniversitelere Rota üzerinden başvurmasını sağlayan eğitim danışmanlığıyız.",
+      contact_social_title: "Sosyal medya",
+      contact_social_lead: "Güncel duyurular ve öğrenci hikâyeleri için bizi takip edin.",
+      contact_social_empty: "Sosyal medya linkleri henüz eklenmedi. js/contact-info.js dosyasını düzenleyin.",
+      contact_label_company: "Kurum",
+      contact_label_about: "Hakkımızda",
+      contact_label_email: "E-posta",
+      contact_label_phone: "Telefon",
+      contact_label_address: "Adres",
+      contact_label_hours: "Çalışma saatleri",
       catalog_kicker: "Türkiye’de üniversite",
       catalog_title: "Üniversiteyi keşfedin, Rota üzerinden başvurun",
       catalog_lead:
@@ -114,8 +126,20 @@
       how_step3_title: "3. Track your file",
       how_step3_text: "Document reviews, status updates, and acceptance letters live in one panel.",
       contact_title: "Contact",
-      contact_text: "Follow updates in your application file. If you do not have an account yet, register first — our consultancy team will stay in touch throughout the process.",
+      contact_text:
+        "We support international students applying to partner universities in Turkey through Rota consultancy, documents, and admissions. Reach us below or track your file in your account.",
       contact_cta: "Sign in / Register",
+      contact_about:
+        "An education consultancy that helps international students apply to partner universities in Turkey through Rota — not directly to the university.",
+      contact_social_title: "Social media",
+      contact_social_lead: "Follow us for updates and student stories.",
+      contact_social_empty: "Social links are not set yet. Edit js/contact-info.js.",
+      contact_label_company: "Company",
+      contact_label_about: "About",
+      contact_label_email: "Email",
+      contact_label_phone: "Phone",
+      contact_label_address: "Address",
+      contact_label_hours: "Hours",
       catalog_kicker: "Study in Turkey",
       catalog_title: "Explore universities, apply through Rota",
       catalog_lead:

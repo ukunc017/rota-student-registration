@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rota — UI preview</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #e8eaee;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+    .vis-sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    #rota-ui-preview.rp {
+      --navy: #1e3a5f;
+      --gold: #c9a227;
+      --page: #f5f6f8;
+      --surface: #ffffff;
+      --line: #e2e5ea;
+      --ink: #1f2933;
+      --muted: #6b7280;
+      --ok: #1a7f37;
+      --warn: #9a6700;
+      color: var(--ink);
+      max-width: 980px;
+      margin: 24px auto;
+    }
+    #rota-ui-preview .rp-shell {
+      background: var(--page);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    #rota-ui-preview .rp-header { background: #1e3a5f; color: #fff; }
+    #rota-ui-preview .rp-header-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+    }
+    #rota-ui-preview .rp-brand { font-weight: 700; }
+    #rota-ui-preview .rp-nav { display: flex; flex-wrap: wrap; gap: 6px; }
+    #rota-ui-preview .rp-nav-btn {
+      background: transparent;
+      color: #fff;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+    #rota-ui-preview .rp-nav-btn.is-active {
+      border-color: var(--gold);
+      background: rgba(201, 162, 39, 0.18);
+    }
+    #rota-ui-preview .rp-lang { font-size: 0.8rem; opacity: 0.85; }
+    #rota-ui-preview .rp-screen { padding: 20px 16px 28px; }
+    #rota-ui-preview h1 { margin: 0 0 8px; font-size: 1.45rem; }
+    #rota-ui-preview h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    #rota-ui-preview .rp-kicker {
+      margin: 0 0 6px;
+      color: var(--gold);
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    #rota-ui-preview .rp-lead,
+    #rota-ui-preview .rp-card p,
+    #rota-ui-preview .rp-list span {
+      color: var(--muted);
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+    }
+    #rota-ui-preview .rp-hero { margin-bottom: 20px; }
+    #rota-ui-preview .rp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+      gap: 12px;
+    }
+    #rota-ui-preview .rp-card,
+    #rota-ui-preview .rp-form,
+    #rota-ui-preview .rp-docs,
+    #rota-ui-preview .rp-list {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    #rota-ui-preview .rp-card { padding: 0 0 14px; overflow: hidden; }
+    #rota-ui-preview .rp-card h2,
+    #rota-ui-preview .rp-card p,
+    #rota-ui-preview .rp-card-actions { padding-left: 14px; padding-right: 14px; }
+    #rota-ui-preview .rp-thumb { height: 72px; margin-bottom: 12px; }
+    #rota-ui-preview .rp-thumb-a { background: #3d5a7a; }
+    #rota-ui-preview .rp-thumb-b { background: #5c6b4a; }
+    #rota-ui-preview .rp-thumb-c { background: #6a4a3a; }
+    #rota-ui-preview .rp-card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    #rota-ui-preview .rp-btn {
+      background: #1e3a5f;
+      color: #fff;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #rota-ui-preview .rp-btn-ghost {
+      background: var(--surface);
+      color: var(--navy);
+      border-color: var(--navy);
+    }
+    #rota-ui-preview .rp-btn-gold { background: var(--gold); color: #142944; }
+    #rota-ui-preview .rp-crumb { color: var(--muted); font-size: 0.8rem; margin: 0 0 10px; }
+    #rota-ui-preview .rp-uni-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    #rota-ui-preview .rp-note {
+      background: #fff8e6;
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.88rem;
+      margin: 0 0 18px;
+    }
+    #rota-ui-preview .rp-list { list-style: none; margin: 0; padding: 0; }
+    #rota-ui-preview .rp-list li {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    #rota-ui-preview .rp-list li:last-child { border-bottom: none; }
+    #rota-ui-preview .rp-list strong { display: block; }
+    #rota-ui-preview .rp-list span { margin: 0; }
+    #rota-ui-preview .rp-form {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+      gap: 12px;
+    }
+    #rota-ui-preview .rp-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    #rota-ui-preview .rp-field input {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--page);
+      color: var(--ink);
+      font: inherit;
+      font-weight: 400;
+    }
+    #rota-ui-preview .rp-form .rp-btn { grid-column: 1 / -1; justify-self: start; }
+    #rota-ui-preview .rp-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px;
+    }
+    #rota-ui-preview .rp-steps li {
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding: 6px 8px;
+      border-bottom: 2px solid var(--line);
+    }
+    #rota-ui-preview .rp-steps li.is-done,
+    #rota-ui-preview .rp-steps li.is-current {
+      color: var(--navy);
+      font-weight: 600;
+      border-bottom-color: var(--gold);
+    }
+    #rota-ui-preview .rp-docs { list-style: none; margin: 0; padding: 0; }
+    #rota-ui-preview .rp-docs li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    #rota-ui-preview .rp-docs li:last-child { border-bottom: none; }
+    #rota-ui-preview .rp-badge { font-size: 0.75rem; color: var(--muted); }
+    #rota-ui-preview .rp-badge-ok { color: var(--ok); }
+    #rota-ui-preview .rp-badge-warn { color: var(--warn); }
+  </style>
+</head>
+<body>
+  <div id="rota-ui-preview" class="rp">
+    <p class="vis-sr-only">Rota student-facing flow: browse universities, then apply to the consultancy.</p>
+    <div class="rp-shell">
+      <header class="rp-header">
+        <div class="rp-header-row">
+          <span class="rp-brand">Rota Education</span>
+          <nav class="rp-nav" aria-label="Screens">
+            <button type="button" class="rp-nav-btn is-active" data-go="home" aria-current="page">Universities</button>
+            <button type="button" class="rp-nav-btn" data-go="uni">University</button>
+            <button type="button" class="rp-nav-btn" data-go="apply">Apply to Rota</button>
+            <button type="button" class="rp-nav-btn" data-go="file">My file</button>
+          </nav>
+          <span class="rp-lang">EN</span>
+        </div>
+      </header>
+
+      <section class="rp-screen" id="rp-home" aria-label="University catalog">
+        <div class="rp-hero">
+          <p class="rp-kicker">Study in Turkey</p>
+          <h1>Choose a university. Apply through Rota.</h1>
+          <p class="rp-lead">We advise you, collect your documents, and handle the university process on your behalf.</p>
+          <button type="button" class="rp-btn rp-btn-gold" data-go="apply">Start consultancy application</button>
+        </div>
+        <div class="rp-grid">
+          <article class="rp-card">
+            <div class="rp-thumb rp-thumb-a" aria-hidden="true"></div>
+            <h2>Istanbul University</h2>
+            <p>Istanbul · English &amp; Turkish programs</p>
+            <div class="rp-card-actions">
+              <button type="button" class="rp-btn rp-btn-ghost" data-go="uni">View programs</button>
+              <button type="button" class="rp-btn" data-apply="Istanbul University" data-program="Computer Engineering">Apply with Rota</button>
+            </div>
+          </article>
+          <article class="rp-card">
+            <div class="rp-thumb rp-thumb-b" aria-hidden="true"></div>
+            <h2>Ankara University</h2>
+            <p>Ankara · Medicine, law, sciences</p>
+            <div class="rp-card-actions">
+              <button type="button" class="rp-btn rp-btn-ghost" data-go="uni">View programs</button>
+              <button type="button" class="rp-btn" data-apply="Ankara University" data-program="Medicine">Apply with Rota</button>
+            </div>
+          </article>
+          <article class="rp-card">
+            <div class="rp-thumb rp-thumb-c" aria-hidden="true"></div>
+            <h2>Middle East Technical University</h2>
+            <p>Ankara · English-medium STEM</p>
+            <div class="rp-card-actions">
+              <button type="button" class="rp-btn rp-btn-ghost" data-go="uni">View programs</button>
+              <button type="button" class="rp-btn" data-apply="Middle East Technical University" data-program="Electrical Engineering">Apply with Rota</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="rp-screen" id="rp-uni" hidden aria-label="University detail">
+        <p class="rp-crumb">Universities / Istanbul University</p>
+        <div class="rp-uni-head">
+          <div>
+            <h1>Istanbul University</h1>
+            <p class="rp-lead">Founded 1453 · Beyazıt, Istanbul · Public</p>
+          </div>
+          <button type="button" class="rp-btn rp-btn-gold" data-apply="Istanbul University" data-program="Computer Engineering">Apply with Rota</button>
+        </div>
+        <p class="rp-note">This is not a university application. You open a consultancy file with Rota. We submit and follow up with the university.</p>
+        <h2>Featured programs</h2>
+        <ul class="rp-list">
+          <li>
+            <div>
+              <strong>Computer Engineering</strong>
+              <span>English · 4 years</span>
+            </div>
+            <button type="button" class="rp-btn" data-apply="Istanbul University" data-program="Computer Engineering">Apply with Rota</button>
+          </li>
+          <li>
+            <div>
+              <strong>Business Administration</strong>
+              <span>English · 4 years</span>
+            </div>
+            <button type="button" class="rp-btn" data-apply="Istanbul University" data-program="Business Administration">Apply with Rota</button>
+          </li>
+          <li>
+            <div>
+              <strong>Medicine</strong>
+              <span>Turkish · 6 years</span>
+            </div>
+            <button type="button" class="rp-btn" data-apply="Istanbul University" data-program="Medicine">Apply with Rota</button>
+          </li>
+        </ul>
+      </section>
+
+      <section class="rp-screen" id="rp-apply" hidden aria-label="Consultancy application">
+        <h1>Consultancy application</h1>
+        <p class="rp-lead">Your file is with Rota. Preferred university is saved so we know where to apply for you.</p>
+        <form class="rp-form" id="rp-form" action="#" onsubmit="return false">
+          <label class="rp-field">Preferred university
+            <input type="text" id="rp-uni-input" value="Istanbul University" readonly />
+          </label>
+          <label class="rp-field">Preferred program
+            <input type="text" id="rp-prog-input" value="Computer Engineering" readonly />
+          </label>
+          <label class="rp-field">Full name
+            <input type="text" value="Amina Hassan" readonly />
+          </label>
+          <label class="rp-field">Email
+            <input type="email" value="amina@email.com" readonly />
+          </label>
+          <label class="rp-field">Nationality
+            <input type="text" value="Jordan" readonly />
+          </label>
+          <label class="rp-field">Phone
+            <input type="tel" value="+962 7 9000 0000" readonly />
+          </label>
+          <button type="button" class="rp-btn rp-btn-gold" data-go="file">Submit to Rota</button>
+        </form>
+      </section>
+
+      <section class="rp-screen" id="rp-file" hidden aria-label="Student file">
+        <h1>Your Rota file</h1>
+        <p class="rp-lead">Istanbul University · Computer Engineering</p>
+        <ol class="rp-steps">
+          <li class="is-done">Pre-registration</li>
+          <li class="is-current">Documents</li>
+          <li>Review</li>
+          <li>Acceptance letter</li>
+          <li>Completed</li>
+        </ol>
+        <ul class="rp-docs">
+          <li><span>Passport</span><span class="rp-badge rp-badge-warn">Under review</span></li>
+          <li><span>Diploma / transcript</span><span class="rp-badge">Not uploaded</span></li>
+          <li><span>Photo</span><span class="rp-badge rp-badge-ok">Approved</span></li>
+        </ul>
+      </section>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const root = document.getElementById("rota-ui-preview");
+      const screens = {
+        home: root.querySelector("#rp-home"),
+        uni: root.querySelector("#rp-uni"),
+        apply: root.querySelector("#rp-apply"),
+        file: root.querySelector("#rp-file")
+      };
+      const uniInput = root.querySelector("#rp-uni-input");
+      const progInput = root.querySelector("#rp-prog-input");
+      function show(name) {
+        Object.keys(screens).forEach(function (key) {
+          screens[key].hidden = key !== name;
+        });
+        root.querySelectorAll(".rp-nav-btn").forEach(function (btn) {
+          const on = btn.getAttribute("data-go") === name;
+          btn.classList.toggle("is-active", on);
+          if (on) btn.setAttribute("aria-current", "page");
+          else btn.removeAttribute("aria-current");
+        });
+      }
+      root.addEventListener("click", function (event) {
+        const applyBtn = event.target.closest("[data-apply]");
+        if (applyBtn) {
+          uniInput.value = applyBtn.getAttribute("data-apply");
+          progInput.value = applyBtn.getAttribute("data-program");
+          show("apply");
+          return;
+        }
+        const goBtn = event.target.closest("[data-go]");
+        if (goBtn) show(goBtn.getAttribute("data-go"));
+      });
+    })();
+  </script>
+</body>
+</html>
