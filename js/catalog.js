@@ -209,16 +209,7 @@
   }
 
   async function paintAuthLinks() {
-    const result = await window.rotaAuth.getCurrentProfile();
-    const slot = document.getElementById("auth-slot");
-    if (!slot) return;
-    if (!result) {
-      slot.innerHTML = `<a class="btn-logout" href="account.html">${t("nav_sign_in")}</a>`;
-      return;
-    }
-    const href = result.profile.role === "admin" ? "admin.html" : "student.html";
-    const label = result.profile.role === "admin" ? t("nav_admin") : t("nav_my_file");
-    slot.innerHTML = `<a class="btn-logout" href="${href}">${label}</a>`;
+    await window.rotaAuth.paintHeaderAuth();
   }
 
   window.rotaCatalog = {

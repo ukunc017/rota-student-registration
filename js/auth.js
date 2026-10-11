@@ -135,5 +135,51 @@
     }, 0);
   }
 
-  window.rotaAuth = { signUp, signIn, signOut, getCurrentProfile, requireRole, renderRoleBadge };
+  // Tüm sayfalarda ortadaki sekmeleri sabit tutar:
+  // Üniversiteler | Nasıl çalışır | İletişim | Başvurum/Yönetim
+  // Sağda yalnızca Giriş veya Çıkış kalır (Başvurum sağa kaymaz).
+  async function paintHeaderAuth() {
+    const t = (k) => window.rotaI18n.t(k);
+    const result = await getCurrentProfile();
+    const workspace = document.getElementById("nav-workspace");
+    const slot = document.getElementById("auth-slot");
+    const badge = document.getElementById("role-badge");
+    const hasStaticLogout = !!document.querySelector("button.btn-logout");
+
+    if (workspace) {
+      workspace.hidden = false;
+      if (result?.profile?.role === "admin") {
+        workspace.href = "admin.html";
+        workspace.setAttribute("data-i18n", "nav_admin");
+        workspace.textContent = t("nav_admin");
+      } else {
+        workspace.href = result ? "student.html" : "account.html?next=student";
+        workspace.setAttribute("data-i18n", "nav_my_file");
+        workspace.textContent = t("nav_my_file");
+      }
+    }
+
+    if (slot) {
+      if (!result) {
+        slot.innerHTML = `<a class="btn-logout" href="account.html">${t("nav_sign_in")}</a>`;
+      } else if (hasStaticLogout) {
+        slot.innerHTML = "";
+      } else {
+        slot.innerHTML = `<button type="button" class="btn-logout">${t("nav_logout")}</button>`;
+        slot.querySelector("button").addEventListener("click", () => signOut());
+      }
+    }
+
+    if (badge) {
+      if (result?.profile) renderRoleBadge(result.profile);
+      else {
+        badge.hidden = true;
+        badge.innerHTML = "";
+      }
+    }
+
+    return result;
+  }
+
+  window.rotaAuth = { signUp, signIn, signOut, getCurrentProfile, requireRole, renderRoleBadge, paintHeaderAuth };
 })();

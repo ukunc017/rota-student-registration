@@ -16,9 +16,12 @@
         <a class="header-link" href="index.html" data-i18n="nav_universities">Üniversiteler</a>
         <a class="header-link" href="how-it-works.html" data-i18n="nav_how_it_works">Nasıl çalışır</a>
         <a class="header-link" href="contact.html" data-i18n="nav_contact">İletişim</a>
+        <a class="header-link" href="account.html?next=student" id="nav-workspace" data-i18n="nav_my_file">Başvurum</a>
       </nav>
       <div class="header-account">
+        <span class="role-badge" id="role-badge" hidden></span>
         <select class="lang-select" data-lang-select onchange="rotaI18n.setLang(this.value)"></select>
+        <span id="auth-slot"></span>
       </div>
     </div>
   </header>
@@ -94,6 +97,9 @@
   <script src="js/i18n-catalog.js"></script>
   <script src="js/auth.js"></script>
   <script>
+    rotaI18n.applyI18n();
+    rotaAuth.paintHeaderAuth();
+
     function showView(view) {
       document.getElementById("login-view").hidden = view !== "login";
       document.getElementById("register-view").hidden = view !== "register";
