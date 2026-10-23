@@ -51,13 +51,36 @@
         });
         const auth = await window.rotaAuth.getCurrentProfile();
         if (!auth) {
-          // serve, .html?query adreslerinde query'yi düşürür; uzantısız kullan
-          window.location.href = "account.html?next=student";
+          // serve/Vercel: *.html?query bazen query'yi düşürür — uzantısız kullan
+          window.location.href = "account?next=student";
           return;
         }
-        window.location.href = auth.profile.role === "admin" ? "admin.html" : "student.html";
+        window.location.href = auth.profile.role === "admin" ? "admin" : "student";
       });
     });
+  }
+
+  // university.html?slug=… → cleanUrls yönlendirmesinde query kaybolabiliyor.
+  function universityHref(u) {
+    const q = new URLSearchParams();
+    if (u.slug) q.set("slug", u.slug);
+    if (u.id) q.set("id", u.id);
+    return `university?${q.toString()}`;
+  }
+
+  function findUniversity(list) {
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+    const slug = params.get("slug");
+    if (id) {
+      const byId = list.find((u) => u.id === id);
+      if (byId) return byId;
+    }
+    if (slug) {
+      const bySlug = list.find((u) => u.slug === slug);
+      if (bySlug) return bySlug;
+    }
+    return null;
   }
 
   async function loadCatalog() {
@@ -118,8 +141,12 @@
           ${!compact && p.entry_requirements ? `<p><strong>${t("program_entry")}</strong> ${escapeHtml(p.entry_requirements)}</p>` : ""}
           ${!compact && p.career_note ? `<p><strong>${t("program_career")}</strong> ${escapeHtml(p.career_note)}</p>` : ""}
         </div>
-        <a class="btn" href="account.html?next=student" data-apply-uni="${escapeHtml(uni.id)}" data-apply-program="${escapeHtml(p.id)}">${t("catalog_apply")}</a>
       </article>`;
+  }
+
+  function applyButton(uni, programId) {
+    const pid = programId || (uni.programs[0] && uni.programs[0].id) || "";
+    return `<a class="btn btn-accent" href="account?next=student" data-apply-uni="${escapeHtml(uni.id)}" data-apply-program="${escapeHtml(pid)}">${t("catalog_apply")}</a>`;
   }
 
   function renderHome(list, query) {
@@ -153,8 +180,8 @@
                 <p>${escapeHtml(snippet(u.about, 160) || t("catalog_no_summary"))}</p>
                 <p class="muted">${u.programs.length} ${t("catalog_program_count")}</p>
                 <div class="uni-card-actions">
-                  <a class="btn btn-secondary" href="university.html?slug=${encodeURIComponent(u.slug)}">${t("catalog_view")}</a>
-                  <a class="btn" href="account.html?next=student" data-apply-uni="${escapeHtml(u.id)}" data-apply-program="${escapeHtml((u.programs[0] && u.programs[0].id) || "")}">${t("catalog_apply")}</a>
+                  <a class="btn btn-secondary" href="${universityHref(u)}">${t("catalog_view")}</a>
+                  <a class="btn" href="account?next=student" data-apply-uni="${escapeHtml(u.id)}" data-apply-program="${escapeHtml((u.programs[0] && u.programs[0].id) || "")}">${t("catalog_apply")}</a>
                 </div>
               </div>
             </article>`
@@ -179,21 +206,17 @@
       app.innerHTML = `<p class="empty-state">${t("catalog_uni_missing")}</p>`;
       return;
     }
-    const website = uni.website
-      ? `<p><a href="${escapeHtml(uni.website)}" rel="noopener noreferrer">${t("uni_website")}</a></p>`
-      : "";
     app.innerHTML = `
-      <p class="crumb"><a href="/">${t("nav_universities")}</a> / ${escapeHtml(uni.name)}</p>
+      <p class="crumb"><a href="index">${t("nav_universities")}</a> / ${escapeHtml(uni.name)}</p>
       <div class="uni-header">
         <div>
           <h1>${escapeHtml(uni.name)}</h1>
           <p class="muted">${escapeHtml([uni.city, kindLabel(uni.kind)].filter(Boolean).join(" · "))}</p>
         </div>
-        <a class="btn btn-accent" href="account.html?next=student" data-apply-uni="${escapeHtml(uni.id)}" data-apply-program="${escapeHtml((uni.programs[0] && uni.programs[0].id) || "")}">${t("catalog_apply")}</a>
+        ${applyButton(uni)}
       </div>
       <p class="rota-callout">${t("catalog_apply_note")}</p>
       ${facts(uni)}
-      ${website}
       ${section("uni_about", uni.about)}
       ${section("uni_admission", uni.admission_requirements)}
       ${section("uni_city_life", uni.city_life)}
@@ -204,6 +227,7 @@
           ? `<div class="program-list">${uni.programs.map((p) => programCard(uni, p)).join("")}</div>`
           : `<p class="muted">${t("uni_no_programs")}</p>`
       }
+      <div class="uni-apply-footer">${applyButton(uni)}</div>
     `;
     bindApplyLinks(app, [uni]);
   }
@@ -232,9 +256,7 @@
       if (page === "catalog") {
         renderHome(list, "");
       } else {
-        const slug = new URLSearchParams(location.search).get("slug");
-        const uni = list.find((u) => u.slug === slug);
-        renderUniversity(uni);
+        renderUniversity(findUniversity(list));
       }
     } catch (err) {
       app.innerHTML = `<p class="empty-state">${escapeHtml(err.message || t("auth_error_generic"))}</p>

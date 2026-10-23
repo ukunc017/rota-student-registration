@@ -950,9 +950,10 @@ table.data-table tbody tr:hover {
   gap: 12px;
 }
 .program-card {
+  display: block;
+}
+.uni-apply-footer {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: flex-start;
+  justify-content: center;
+  margin: 28px 0 8px;
 }
