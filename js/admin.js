@@ -163,25 +163,25 @@
       <form class="doctype-edit-form" data-edit-doctype-form="${dt.id}">
         <div class="row">
           <div class="field">
-            <label>Türkçe *</label>
+            <label>${t("admin_lang_label_tr")} ${t("admin_lang_required")}</label>
             <input type="text" name="label_tr" value="${esc(dt.label_tr || "")}" required />
           </div>
           <div class="field">
-            <label>English *</label>
+            <label>${t("admin_lang_label_en")} ${t("admin_lang_required")}</label>
             <input type="text" name="label_en" value="${esc(dt.label_en || "")}" required />
           </div>
         </div>
         <div class="row">
           <div class="field">
-            <label>العربية</label>
+            <label>${t("admin_lang_label_ar")}</label>
             <input type="text" name="label_ar" value="${esc(dt.label_ar || "")}" dir="rtl" />
           </div>
           <div class="field">
-            <label>فارسی</label>
+            <label>${t("admin_lang_label_fa")}</label>
             <input type="text" name="label_fa" value="${esc(dt.label_fa || "")}" dir="rtl" />
           </div>
           <div class="field">
-            <label>Русский</label>
+            <label>${t("admin_lang_label_ru")}</label>
             <input type="text" name="label_ru" value="${esc(dt.label_ru || "")}" />
           </div>
         </div>
@@ -222,25 +222,25 @@
         <form id="add-doctype-form" class="spaced-top">
           <div class="row">
             <div class="field">
-              <label>Türkçe *</label>
+              <label>${t("admin_lang_label_tr")} ${t("admin_lang_required")}</label>
               <input type="text" id="new-doctype-tr" required />
             </div>
             <div class="field">
-              <label>English *</label>
+              <label>${t("admin_lang_label_en")} ${t("admin_lang_required")}</label>
               <input type="text" id="new-doctype-en" required />
             </div>
           </div>
           <div class="row">
             <div class="field">
-              <label>العربية</label>
+              <label>${t("admin_lang_label_ar")}</label>
               <input type="text" id="new-doctype-ar" dir="rtl" />
             </div>
             <div class="field">
-              <label>فارسی</label>
+              <label>${t("admin_lang_label_fa")}</label>
               <input type="text" id="new-doctype-fa" dir="rtl" />
             </div>
             <div class="field">
-              <label>Русский</label>
+              <label>${t("admin_lang_label_ru")}</label>
               <input type="text" id="new-doctype-ru" />
             </div>
           </div>
@@ -321,6 +321,7 @@
         <div class="row">
           <h2 style="margin:0">${t("admin_universities_title")}</h2>
           <div class="toolbar-right">
+            <button type="button" class="btn btn-secondary" id="seed-uni-btn">${t("admin_seed_sample")}</button>
             <button type="button" class="btn" id="add-uni-btn">${t("admin_university_add")}</button>
           </div>
         </div>
@@ -363,6 +364,19 @@
         }
       </div>`;
     bindAdminNav();
+    document.getElementById("seed-uni-btn")?.addEventListener("click", async () => {
+      const btn = document.getElementById("seed-uni-btn");
+      btn.disabled = true;
+      try {
+        const result = await window.rotaSeed.seedSampleUniversities(sb());
+        alert(t("admin_seed_sample_done").replace("{unis}", String(result.totalUnis)).replace("{programs}", String(result.createdPrograms)));
+        await loadUniversities();
+        renderUniversityList();
+      } catch (err) {
+        alert(err.message || t("auth_error_generic"));
+        btn.disabled = false;
+      }
+    });
     document.getElementById("add-uni-btn").addEventListener("click", () => {
       state.editUniversity = {
         id: null,

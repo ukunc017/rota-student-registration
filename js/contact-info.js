@@ -14,6 +14,7 @@ window.ROTA_CONTACT = {
   company: "RotaEdu Turkey",
   email: "info@rotaedu.turkey",
   phone: "+90 XXX XXX XX XX",
+  // Adres / saat metinleri i18n’de: contact_address_value, contact_hours_value
   address: "İstanbul, Türkiye",
   hours: "Pzt–Cum 09:00–18:00",
 

@@ -46,10 +46,9 @@ a {
 }
 .site-header .container {
   display: grid;
-  /* Logo sola; sekmeler + hesap sağda, aralarında sabit boşluk */
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 1fr);
   align-items: center;
-  gap: 28px;
+  gap: 16px;
   max-width: none;
   width: 100%;
   margin: 0;
@@ -77,14 +76,11 @@ a {
 .header-nav {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 2px;
   flex-wrap: nowrap;
-  justify-self: end;
+  justify-self: center;
   grid-column: 2;
-}
-#nav-workspace {
-  background: rgba(30, 58, 95, 0.06);
 }
 .header-link {
   color: var(--text);
@@ -96,12 +92,22 @@ a {
   transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
   flex: 0 0 auto;
+  background: transparent;
 }
-.header-link:hover,
-.header-link.is-active {
+.header-link:hover {
+  color: var(--primary);
+  background: rgba(30, 58, 95, 0.04);
+  text-decoration: none;
+}
+.header-link.is-active,
+.header-link.is-active:hover {
   color: var(--primary);
   background: rgba(30, 58, 95, 0.06);
   text-decoration: none;
+}
+/* Başvurum/Yönetim yalnızca .is-active iken highlight */
+#nav-workspace:not(.is-active) {
+  background: transparent;
 }
 .header-account {
   display: flex;
@@ -111,7 +117,6 @@ a {
   min-width: 0;
   justify-self: end;
   grid-column: 3;
-  /* Sağ blok genişliği sabit kalsın (Giriş ↔ profil/çıkış) */
   min-width: 280px;
 }
 .role-badge {

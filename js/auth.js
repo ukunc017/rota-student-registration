@@ -135,6 +135,45 @@
     }, 0);
   }
 
+  // Hangi sayfadaysak yalnızca o sekme .is-active olsun.
+  function syncNavActive() {
+    const path = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+    const page =
+      !path || path === "index.html" || path === ""
+        ? "universities"
+        : path.startsWith("university")
+          ? "universities"
+          : path.startsWith("how-it-works")
+            ? "how"
+            : path.startsWith("contact")
+              ? "contact"
+              : path.startsWith("admin")
+                ? "workspace"
+                : path.startsWith("student")
+                  ? "workspace"
+                  : "";
+
+    document.querySelectorAll(".header-nav .header-link").forEach((link) => {
+      link.classList.remove("is-active");
+      link.removeAttribute("aria-current");
+    });
+
+    let active = null;
+    if (page === "universities") {
+      active = document.querySelector('.header-nav a[href="index.html"]');
+    } else if (page === "how") {
+      active = document.querySelector('.header-nav a[href="how-it-works.html"]');
+    } else if (page === "contact") {
+      active = document.querySelector('.header-nav a[href="contact.html"]');
+    } else if (page === "workspace") {
+      active = document.getElementById("nav-workspace");
+    }
+    if (active) {
+      active.classList.add("is-active");
+      active.setAttribute("aria-current", "page");
+    }
+  }
+
   // Tüm sayfalarda ortadaki sekmeleri sabit tutar:
   // Üniversiteler | Nasıl çalışır | İletişim | Başvurum/Yönetim
   // Sağda yalnızca Giriş veya Çıkış kalır (Başvurum sağa kaymaz).
@@ -158,6 +197,8 @@
         workspace.textContent = t("nav_my_file");
       }
     }
+
+    syncNavActive();
 
     if (slot) {
       if (!result) {

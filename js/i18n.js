@@ -498,6 +498,7 @@ window.ROTA_RTL_LANGS = ["ar", "fa"];
   function setLang(lang) {
     localStorage.setItem("rota_lang", lang);
     applyI18n();
+    window.dispatchEvent(new CustomEvent("rota:langchange", { detail: { lang } }));
   }
   function t(key) {
     const lang = getLang();
@@ -525,6 +526,12 @@ window.ROTA_RTL_LANGS = ["ar", "fa"];
     });
     document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
       el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
+    });
+    document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+      el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria")));
+    });
+    document.querySelectorAll("[data-i18n-alt]").forEach((el) => {
+      el.setAttribute("alt", t(el.getAttribute("data-i18n-alt")));
     });
     document.querySelectorAll("[data-lang-select]").forEach((el) => {
       el.value = lang;
