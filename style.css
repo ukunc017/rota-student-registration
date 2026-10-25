@@ -117,7 +117,6 @@ a {
   min-width: 0;
   justify-self: end;
   grid-column: 3;
-  min-width: 280px;
 }
 .role-badge {
   display: inline-flex;
@@ -264,38 +263,129 @@ a {
 }
 
 @media (max-width: 900px) {
-  .header-account {
-    min-width: 0;
-  }
-}
-
-@media (max-width: 720px) {
   .site-header .container {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "brand account"
       "nav nav";
-    gap: 12px;
+    gap: 8px 10px;
+    padding: 8px 12px;
+    min-height: 0;
+    align-items: center;
   }
   .brand {
     grid-area: brand;
+    grid-column: auto;
+    justify-self: start;
+    min-width: 0;
+    max-width: 100%;
   }
-  .header-nav {
-    grid-area: nav;
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-    overflow-x: auto;
+  .brand-logo {
+    height: 36px;
+    max-width: 100%;
+    width: auto;
   }
   .header-account {
     grid-area: account;
     grid-column: auto;
+    justify-self: end;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-width: 0;
+    max-width: 58%;
+  }
+  .header-nav {
+    grid-area: nav;
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 0;
+    width: 100%;
+    overflow: visible;
+  }
+  .header-link {
+    font-size: 0.72rem;
+    padding: 6px 6px;
+    flex: 1 1 0;
+    text-align: center;
     min-width: 0;
   }
-  .role-fullname {
-    max-width: 90px;
+  .role-meta {
+    display: none;
+  }
+  .role-badge {
+    padding: 3px;
+    max-width: none;
+    gap: 0;
+  }
+  .role-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 0.62rem;
+  }
+  .lang-select {
+    padding: 5px 6px;
+    font-size: 0.72rem;
+    min-height: 30px;
+    max-width: 92px;
+  }
+  .btn-logout {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+    min-height: 30px;
+  }
+}
+
+@media (max-width: 420px) {
+  .site-header .container {
+    padding: 8px 10px;
+    gap: 6px 8px;
   }
   .brand-logo {
-    height: 48px;
+    height: 32px;
+  }
+  .header-link {
+    font-size: 0.68rem;
+    padding: 5px 4px;
+  }
+  .lang-select {
+    max-width: 78px;
+    font-size: 0.68rem;
+    padding: 4px 4px;
+  }
+  .btn-logout {
+    padding: 4px 6px;
+    font-size: 0.68rem;
+  }
+  .container {
+    padding: 0 12px;
+  }
+  main {
+    padding: 20px 0 48px;
+  }
+}
+
+@media (max-width: 720px) {
+  .card:has(table.data-table),
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table.data-table {
+    min-width: 560px;
+  }
+  .uni-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .uni-card-actions {
+    flex-direction: column;
+  }
+  .uni-card-actions .btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -528,7 +618,7 @@ main {
   gap: 12px;
   padding: 14px 0;
   border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .doc-item:last-child {
   border-bottom: none;
@@ -537,9 +627,14 @@ main {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 .doc-item-name {
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .doc-item-note {
   font-size: 0.8rem;
@@ -549,6 +644,8 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
 }
 
 /* Admin table */
@@ -669,13 +766,61 @@ table.data-table tbody tr:hover {
   margin-top: 8px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
+  .doc-item {
+    gap: 8px;
+    padding: 12px 0;
+  }
+  .doc-item-name {
+    font-size: 0.85rem;
+  }
+  .doc-item-actions {
+    gap: 4px;
+  }
+  .doc-item-actions .btn-sm,
+  .doc-item-actions .btn {
+    padding: 4px 7px;
+    font-size: 0.7rem;
+    min-height: 28px;
+    white-space: nowrap;
+  }
+  .doc-item .badge {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+  }
   .stepper {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: 0;
   }
   .stepper li {
-    flex: 1 0 33%;
-    margin-bottom: 12px;
+    flex: 1 1 0;
+    font-size: 0.62rem;
+    padding-top: 26px;
+    line-height: 1.2;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+  .stepper li::after {
+    width: 12px;
+    height: 12px;
+    top: 5px;
+  }
+  .stepper li::before {
+    top: 9px;
+  }
+}
+
+@media (max-width: 420px) {
+  .doc-item-actions {
+    gap: 3px;
+  }
+  .doc-item-actions .btn-sm,
+  .doc-item-actions .btn {
+    padding: 3px 5px;
+    font-size: 0.65rem;
+  }
+  .doc-item-name {
+    font-size: 0.8rem;
   }
 }
 
