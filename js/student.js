@@ -121,6 +121,107 @@
     return state.universities.find((u) => u.id === state.application.university_id) || null;
   }
 
+  function docStats() {
+    let approved = 0;
+    let pending = 0;
+    let missing = 0;
+    let rejected = 0;
+    const actionItems = [];
+    state.documentTypes.forEach((dt) => {
+      const doc = state.documentsByType[dt.id];
+      const status = doc ? doc.status : "missing";
+      if (status === "approved") approved += 1;
+      else if (status === "pending") pending += 1;
+      else if (status === "rejected") {
+        rejected += 1;
+        actionItems.push({ dt, status });
+      } else if (dt.required) {
+        missing += 1;
+        actionItems.push({ dt, status: "missing" });
+      }
+    });
+    return { approved, pending, missing, rejected, actionItems };
+  }
+
+  function nextStepKey(stats) {
+    const app = state.application;
+    if (!app.university_id || !app.program_id) return "file_summary_next_choose";
+    if (stats.missing > 0 || stats.rejected > 0) return "file_summary_next_upload";
+    if (app.status === "completed") return "file_summary_next_done";
+    if (app.status === "accepted" || app.status === "completed") {
+      return app.acceptance_letter_path ? "file_summary_next_letter" : "file_summary_next_letter_wait";
+    }
+    if (stats.pending > 0 || app.status === "under_review" || app.status === "documents_pending") {
+      return "file_summary_next_wait";
+    }
+    return "file_summary_next_choose";
+  }
+
+  function fillTemplate(key, vars) {
+    let s = t(key);
+    Object.keys(vars).forEach((k) => {
+      s = s.replace(new RegExp("\\{" + k + "\\}", "g"), String(vars[k]));
+    });
+    return s;
+  }
+
+  function renderFileSummary() {
+    const stats = docStats();
+    const STATUS_LABEL_KEY = {
+      pre_registration: "step_pre_registration",
+      documents_pending: "step_documents_pending",
+      under_review: "step_under_review",
+      accepted: "step_accepted",
+      completed: "step_completed",
+    };
+    const uni = state.application.target_university;
+    const program = state.application.target_program;
+    const pref =
+      uni || program
+        ? `${window.rotaCatalog.escapeHtml(uni || "—")}${program ? " · " + window.rotaCatalog.escapeHtml(program) : ""}`
+        : t("file_summary_preference_none");
+    const reminder =
+      stats.actionItems.length === 0
+        ? ""
+        : `<div class="file-reminder" role="status">
+            <strong>${t("file_reminder_title")}</strong>
+            <p class="muted">${t("file_reminder_lead")}</p>
+            <ul class="file-reminder-list">
+              ${stats.actionItems
+                .map(
+                  (item) =>
+                    `<li><span>${window.rotaCatalog.escapeHtml(window.rotaI18n.docTypeLabel(item.dt))}</span> ${statusBadge(item.status)}</li>`
+                )
+                .join("")}
+            </ul>
+          </div>`;
+
+    return `
+      <div class="card file-summary">
+        <h2>${t("file_summary_title")}</h2>
+        ${renderStepper()}
+        <dl class="file-summary-grid">
+          <div>
+            <dt>${t("file_summary_status")}</dt>
+            <dd>${t(STATUS_LABEL_KEY[state.application.status] || "step_pre_registration")}</dd>
+          </div>
+          <div>
+            <dt>${t("file_summary_preference")}</dt>
+            <dd>${pref}</dd>
+          </div>
+          <div>
+            <dt>${t("file_summary_docs")}</dt>
+            <dd>${fillTemplate("file_summary_docs_line", stats)}</dd>
+          </div>
+          <div>
+            <dt>${t("file_summary_next")}</dt>
+            <dd>${t(nextStepKey(stats))}</dd>
+          </div>
+        </dl>
+        ${reminder}
+      </div>`;
+  }
+
   function programOptionsHtml() {
     const uni = selectedUniversity();
     const programs = uni ? uni.programs : [];
@@ -134,9 +235,7 @@
     window.rotaAuth.renderRoleBadge(state.profile);
     const app = document.getElementById("app");
     app.innerHTML = `
-      <div class="card">
-        ${renderStepper()}
-      </div>
+      ${renderFileSummary()}
       <div class="card">
         <h2>${t("application_title")}</h2>
         <form id="application-form">

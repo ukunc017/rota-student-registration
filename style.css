@@ -605,6 +605,70 @@ main {
   color: var(--danger);
 }
 
+/* Student file summary */
+.file-summary h2 {
+  margin-bottom: 16px;
+}
+.file-summary .stepper {
+  margin-bottom: 20px;
+}
+.file-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 20px;
+  margin: 0;
+}
+.file-summary-grid dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 0 0 4px;
+}
+.file-summary-grid dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.file-reminder {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--warning);
+  background: var(--warning-bg);
+  border-radius: var(--radius);
+}
+.file-reminder strong {
+  display: block;
+  margin-bottom: 4px;
+}
+.file-reminder p {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+}
+.file-reminder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.file-reminder-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+@media (max-width: 640px) {
+  .file-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Document list */
 .doc-list {
   list-style: none;

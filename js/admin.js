@@ -26,6 +26,7 @@
     editUniversity: null,
     editPrograms: [],
     editingDocTypeId: null,
+    profiles: [],
   };
 
   async function loadApplications() {
@@ -68,6 +69,7 @@
       <div class="admin-tabs">
         <button type="button" class="btn ${state.tab === "apps" ? "" : "btn-secondary"} btn-sm" data-tab="apps">${t("admin_nav_applications")}</button>
         <button type="button" class="btn ${state.tab === "unis" ? "" : "btn-secondary"} btn-sm" data-tab="unis">${t("admin_nav_universities")}</button>
+        <button type="button" class="btn ${state.tab === "users" ? "" : "btn-secondary"} btn-sm" data-tab="users">${t("admin_nav_users")}</button>
       </div>`;
   }
 
@@ -85,7 +87,93 @@
             return;
           }
         }
+        if (state.tab === "users") {
+          try {
+            await loadProfiles();
+          } catch (err) {
+            document.getElementById("app").innerHTML = `<p class="empty-state">${esc(err.message)}</p>`;
+            return;
+          }
+        }
         render();
+      });
+    });
+  }
+
+  async function loadProfiles() {
+    const { data, error } = await sb()
+      .from("profiles")
+      .select("id, full_name, email, phone, role, created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    state.profiles = data || [];
+  }
+
+  function renderUsersList() {
+    const app = document.getElementById("app");
+    const admins = state.profiles.filter((p) => p.role === "admin");
+    app.innerHTML = `
+      ${adminNav()}
+      <div class="card">
+        <h2 style="margin:0 0 8px">${t("admin_users_title")}</h2>
+        <p class="muted" style="margin:0 0 16px">${t("admin_users_lead")}</p>
+        ${
+          state.profiles.length === 0
+            ? `<p class="empty-state">${t("admin_users_empty")}</p>`
+            : `<table class="data-table">
+                <thead>
+                  <tr>
+                    <th>${t("admin_table_name")}</th>
+                    <th>${t("login_email")}</th>
+                    <th>${t("profile_role")}</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${state.profiles
+                    .map((p) => {
+                      const isSelf = p.id === state.profile.id;
+                      const isAdmin = p.role === "admin";
+                      let action = "";
+                      if (isAdmin) {
+                        const canDemote = !isSelf && admins.length > 1;
+                        action = canDemote
+                          ? `<button type="button" class="btn btn-secondary btn-sm" data-set-role="${p.id}" data-role="student">${t("admin_users_make_student")}</button>`
+                          : `<span class="muted">${isSelf ? t("admin_users_you") : t("admin_users_last_admin")}</span>`;
+                      } else {
+                        action = `<button type="button" class="btn btn-sm" data-set-role="${p.id}" data-role="admin">${t("admin_users_make_admin")}</button>`;
+                      }
+                      return `
+                    <tr>
+                      <td>${esc(p.full_name || "—")}${isSelf ? ` <span class="muted">(${t("admin_users_you")})</span>` : ""}</td>
+                      <td>${esc(p.email || "—")}</td>
+                      <td><span class="badge ${isAdmin ? "badge-approved" : "badge-missing"}">${esc(
+                        t(isAdmin ? "role_admin" : "role_student")
+                      )}</span></td>
+                      <td class="col-actions">${action}</td>
+                    </tr>`;
+                    })
+                    .join("")}
+                </tbody>
+              </table>`
+        }
+      </div>`;
+    bindAdminNav();
+    document.querySelectorAll("[data-set-role]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-set-role");
+        const role = btn.getAttribute("data-role");
+        const confirmKey = role === "admin" ? "admin_users_confirm_promote" : "admin_users_confirm_demote";
+        if (!confirm(t(confirmKey))) return;
+        btn.disabled = true;
+        const { error } = await sb().from("profiles").update({ role }).eq("id", id);
+        if (error) {
+          alert(error.message);
+          btn.disabled = false;
+          return;
+        }
+        await loadProfiles();
+        renderUsersList();
       });
     });
   }
@@ -110,7 +198,17 @@
       .single();
     if (error) throw error;
     const { data: documents } = await sb().from("documents").select("*").eq("application_id", applicationId);
-    state.detail = { application, documents: documents || [] };
+    let lastReminderAt = null;
+    const { data: lastReminderRows, error: reminderErr } = await sb()
+      .from("notification_log")
+      .select("sent_at")
+      .eq("application_id", applicationId)
+      .eq("kind", "documents_reminder")
+      .not("sent_at", "is", null)
+      .order("sent_at", { ascending: false })
+      .limit(1);
+    if (!reminderErr) lastReminderAt = lastReminderRows?.[0]?.sent_at || null;
+    state.detail = { application, documents: documents || [], lastReminderAt };
   }
 
   // Yeni sekme açmak (window.open) yerine mevcut sekmede yönlendirir —
@@ -137,6 +235,16 @@
   function fmtDate(iso) {
     if (!iso) return "";
     return new Date(iso).toLocaleDateString(DATE_LOCALES[window.rotaI18n.getLang()] || "en-US");
+  }
+  function fmtDateTime(iso) {
+    if (!iso) return "";
+    return new Date(iso).toLocaleString(DATE_LOCALES[window.rotaI18n.getLang()] || "en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
 
   // ---------------------------------------------------------------- LIST --
@@ -757,11 +865,14 @@
   }
 
   function renderDetail() {
-    const { application, documents } = state.detail;
+    const { application, documents, lastReminderAt } = state.detail;
     const docsByType = {};
     documents.forEach((d) => (docsByType[d.document_type_id] = d));
     const relevantTypes = state.documentTypesAll.filter((dt) => dt.active || docsByType[dt.id]);
     const profile = application.profile || {};
+    const lastReminderText = lastReminderAt
+      ? t("admin_last_doc_reminder").replace("{date}", fmtDateTime(lastReminderAt))
+      : t("admin_last_doc_reminder_never");
 
     const app = document.getElementById("app");
     app.innerHTML = `
@@ -796,6 +907,11 @@
       <div class="card">
         <h2>${t("documents_title")}</h2>
         <ul class="doc-list">${relevantTypes.map((dt) => renderDetailDocRow(dt, docsByType[dt.id])).join("")}</ul>
+        <div class="spaced-top row" style="align-items:center;gap:12px;flex-wrap:wrap">
+          <button type="button" class="btn btn-secondary btn-sm" id="send-doc-reminder-btn">${t("admin_send_doc_reminder")}</button>
+          <span class="muted" id="last-reminder-label" style="font-size:0.85rem">${esc(lastReminderText)}</span>
+          <span class="form-msg" id="notify-msg" style="margin:0"></span>
+        </div>
       </div>
 
       <div class="card">
@@ -814,6 +930,19 @@
     attachDetailHandlers();
   }
 
+  function setNotifyMsg(ok, detail) {
+    const el = document.getElementById("notify-msg");
+    if (!el) return;
+    el.textContent = ok ? t("admin_notify_sent") : `${t("admin_notify_failed")}${detail ? ": " + detail : ""}`;
+    el.className = ok ? "form-msg success" : "form-msg error";
+    el.style.margin = "0";
+  }
+
+  function docLabelFor(doc) {
+    const dt = state.documentTypesAll.find((d) => d.id === doc.document_type_id);
+    return dt ? window.rotaI18n.docTypeLabel(dt) : "Document";
+  }
+
   function attachDetailHandlers() {
     const { application } = state.detail;
 
@@ -826,11 +955,21 @@
     document.getElementById("save-detail-btn").addEventListener("click", async () => {
       const status = document.getElementById("status-select").value;
       const notes = document.getElementById("admin-notes").value;
+      const prevStatus = application.status;
       const { error } = await sb().from("applications").update({ status, notes }).eq("id", application.id);
       const msg = document.getElementById("detail-save-msg");
       msg.textContent = error ? error.message : t("application_saved");
       msg.className = error ? "form-msg error" : "form-msg success";
-      if (!error) await loadDetail(application.id);
+      if (!error) {
+        if (status !== prevStatus) {
+          await window.rotaNotify.notifyStudent("status_changed", application.id, {
+            from_status: prevStatus,
+            to_status: status,
+          });
+        }
+        await loadDetail(application.id);
+        renderDetail();
+      }
     });
 
     document.querySelectorAll("[data-view-doc]").forEach((btn) => {
@@ -844,8 +983,14 @@
     document.querySelectorAll("[data-approve-doc]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.getAttribute("data-approve-doc");
+        const doc = state.detail.documents.find((d) => d.id === id);
         const { error } = await sb().from("documents").update({ status: "approved", review_note: null }).eq("id", id);
         if (error) return alert(error.message);
+        if (doc) {
+          await window.rotaNotify.notifyStudent("document_approved", application.id, {
+            document_label: docLabelFor(doc),
+          });
+        }
         await loadDetail(application.id);
         renderDetail();
       });
@@ -856,11 +1001,46 @@
         const note = prompt(t("admin_reject_note_prompt"));
         if (note === null) return;
         const id = btn.getAttribute("data-reject-doc");
+        const doc = state.detail.documents.find((d) => d.id === id);
         const { error } = await sb().from("documents").update({ status: "rejected", review_note: note }).eq("id", id);
         if (error) return alert(error.message);
+        if (doc) {
+          await window.rotaNotify.notifyStudent("document_rejected", application.id, {
+            document_label: docLabelFor(doc),
+            review_note: note,
+          });
+        }
         await loadDetail(application.id);
         renderDetail();
       });
+    });
+
+    document.getElementById("send-doc-reminder-btn")?.addEventListener("click", async () => {
+      const btn = document.getElementById("send-doc-reminder-btn");
+      const docsByType = {};
+      state.detail.documents.forEach((d) => (docsByType[d.document_type_id] = d));
+      const labels = window.rotaNotify.missingDocLabels(state.documentTypesAll, docsByType, (dt) =>
+        window.rotaI18n.docTypeLabel(dt)
+      );
+      if (!labels.length) {
+        const el = document.getElementById("notify-msg");
+        if (el) {
+          el.textContent = t("admin_notify_no_missing");
+          el.className = "form-msg";
+          el.style.margin = "0";
+        }
+        return;
+      }
+      btn.disabled = true;
+      const result = await window.rotaNotify.notifyStudent("documents_reminder", application.id, {
+        missing_labels: labels,
+      });
+      btn.disabled = false;
+      if (result.ok) {
+        await loadDetail(application.id);
+        renderDetail();
+      }
+      setNotifyMsg(result.ok, result.error);
     });
 
     const letterBtn = document.getElementById("view-letter-btn");
@@ -884,6 +1064,7 @@
         .eq("id", application.id);
       if (dbErr) return alert(dbErr.message);
       if (previous) await sb().storage.from("documents").remove([previous]);
+      await window.rotaNotify.notifyStudent("acceptance_letter", application.id, {});
       await loadDetail(application.id);
       renderDetail();
     });
@@ -898,6 +1079,8 @@
       renderUniversityEdit();
     } else if (state.tab === "unis") {
       renderUniversityList();
+    } else if (state.tab === "users") {
+      renderUsersList();
     } else {
       renderList();
     }

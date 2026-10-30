@@ -45,10 +45,12 @@ Storage) ile yazıldı, framework/build adımı yok.
 
 - `index.html` / `university.html` — üniversite ve bölüm vitrini
 - `account.html` — öğrenci/admin giriş ve kayıt
-- `student.html` + `js/student.js` — öğrenci paneli: tercih, evrak, süreç, kabul mektubu
-- `admin.html` + `js/admin.js` — başvurular ve üniversite/bölüm kataloğu yönetimi
+- `student.html` + `js/student.js` — öğrenci paneli: dosyam özeti, tercih, evrak, süreç, kabul mektubu
+- `admin.html` + `js/admin.js` — başvurular, e-posta hatırlatması, üniversite/bölüm kataloğu
+- `js/notify.js` + `supabase/functions/notify-student` — öğrenci e-posta bildirimleri
 - `js/supabaseClient.js`, `js/auth.js`, `js/i18n.js`, `js/catalog.js` — paylaşılan yardımcılar
 - `sql/schema.sql` — veritabanı şeması, RLS politikaları, storage bucket'ı
+- `sql/add_notifications.sql` — mevcut projeye bildirim tablosu eklemek için
 
 ## Güvenlik notları
 
@@ -70,9 +72,31 @@ Storage) ile yazıldı, framework/build adımı yok.
    adresinde canlıya alınır.
 4. Sonraki her `git push`, otomatik olarak yeni bir deployment tetikler.
 
+## E-posta bildirimleri (öğrenci)
+
+Admin onay/red, durum değişimi, kabul mektubu yükleme ve “eksik evrak hatırlatması”
+öğrencinin kayıtlı e-postasına gider. Gönderim [Resend](https://resend.com) +
+Supabase Edge Function ile yapılır.
+
+1. Supabase SQL Editor’de [`sql/add_notifications.sql`](sql/add_notifications.sql)
+   dosyasını çalıştırın.
+2. [resend.com](https://resend.com) hesabı açıp API key alın. Test için
+   `onboarding@resend.dev` gönderici kullanılabilir; production’da kendi
+   domain’inizi doğrulayın.
+3. Proje kökünde (bir kez):
+   ```bash
+   npx supabase login
+   npx supabase link --project-ref YOUR_PROJECT_REF
+   npx supabase secrets set RESEND_API_KEY=re_xxx FROM_EMAIL="Rota <onboarding@resend.dev>" SITE_URL=https://YOUR-VERCEL-APP.vercel.app
+   npx supabase functions deploy notify-student
+   ```
+4. Admin panelinde bir başvuruyu açıp evrak onaylayın veya
+   **Eksik evrak hatırlatması gönder** düğmesine basın.
+
+Fonksiyon kurulu değilse panel yine çalışır; e-posta gönderilemez ve konsolda uyarı görünür.
+Öğrenci panelindeki **Dosyam özeti** e-postadan bağımsızdır (anında görünür).
+
 ## Kapsam dışı (sonraki adımlar)
 
-- E-posta bildirimleri (evrak onaylandı/reddedildi, kabul mektubu yüklendi)
 - Danışman rolü (adminlerin belirli öğrencilere atanması)
-- TR/EN dışında diller
 - Ödeme/e-imza entegrasyonu

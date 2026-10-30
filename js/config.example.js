@@ -6,4 +6,6 @@
 window.ROTA_CONFIG = {
   SUPABASE_URL: "https://YOUR-PROJECT.supabase.co",
   SUPABASE_ANON_KEY: "YOUR-ANON-PUBLIC-KEY",
+  // Canlı site adresi (e-posta içindeki "dosyam" linki için Edge Function SITE_URL ile aynı olmalı)
+  SITE_URL: "https://YOUR-VERCEL-APP.vercel.app",
 };

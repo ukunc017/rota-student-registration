@@ -1,0 +1,5 @@
+# Minimal Supabase CLI config — Edge Function deploy için.
+# Proje ref: Dashboard > Project Settings > General > Reference ID
+
+[functions.notify-student]
+verify_jwt = true
