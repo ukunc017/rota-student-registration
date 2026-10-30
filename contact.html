@@ -66,13 +66,14 @@
       const t = (k) => rotaI18n.t(k);
       const c = window.ROTA_CONTACT || {};
       const details = document.getElementById("contact-details");
+      const about = (c.about || "").trim() || t("contact_about");
       const rows = [
         ["contact_label_company", c.company],
-        ["contact_label_about", t("contact_about")],
+        ["contact_label_about", about],
         ["contact_label_email", c.email ? `<a href="mailto:${c.email}">${c.email}</a>` : ""],
         ["contact_label_phone", c.phone],
-        ["contact_label_address", t("contact_address_value") || c.address],
-        ["contact_label_hours", t("contact_hours_value") || c.hours],
+        ["contact_label_address", c.address || t("contact_address_value")],
+        ["contact_label_hours", c.hours || t("contact_hours_value")],
       ].filter(([, v]) => v);
 
       details.innerHTML = rows
@@ -110,8 +111,8 @@
     }
 
     rotaI18n.applyI18n();
-    renderContact();
     rotaAuth.paintHeaderAuth();
+    rotaContact.load().then(() => renderContact());
     window.addEventListener("rota:langchange", () => {
       renderContact();
       rotaAuth.paintHeaderAuth();

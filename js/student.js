@@ -97,7 +97,7 @@
           ${doc ? `<button type="button" class="btn btn-secondary btn-sm" data-view-doc="${doc.id}">${t("document_view")}</button>` : ""}
           <label class="btn btn-sm">
             ${uploadLabel}
-            <input type="file" data-upload-doctype="${dt.id}" style="display:none" />
+            <input type="file" data-upload-doctype="${dt.id}" accept="${window.rotaFiles.acceptDocuments()}" style="display:none" />
           </label>
           ${doc ? `<button type="button" class="btn btn-danger btn-sm" data-delete-doc="${doc.id}">${t("document_delete")}</button>` : ""}
         </div>
@@ -364,6 +364,8 @@
   }
 
   async function uploadDocument(dt, file) {
+    const check = window.rotaFiles.validateDocument(file);
+    if (!check.ok) throw new Error(t(check.errorKey));
     const previous = state.documentsByType[dt.id];
     const path = `${state.userId}/${dt.key}-${Date.now()}-${file.name}`;
     const { error: upErr } = await sb().storage.from("documents").upload(path, file);

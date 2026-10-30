@@ -173,7 +173,11 @@
               .map(
                 (u) => `
             <article class="uni-card">
-              <div class="uni-card-top"></div>
+              <div class="uni-card-top${u.cover_path ? " has-cover" : ""}"${
+                  u.cover_path
+                    ? ` style="background-image:url('${escapeHtml(window.rotaFiles.publicMediaUrl(u.cover_path))}')"`
+                    : ""
+                }></div>
               <div class="uni-card-body">
                 <h2>${escapeHtml(u.name)}</h2>
                 <p class="muted">${escapeHtml([u.city, kindLabel(u.kind)].filter(Boolean).join(" · "))}</p>
@@ -206,8 +210,10 @@
       app.innerHTML = `<p class="empty-state">${t("catalog_uni_missing")}</p>`;
       return;
     }
+    const coverUrl = uni.cover_path ? window.rotaFiles.publicMediaUrl(uni.cover_path) : "";
     app.innerHTML = `
       <p class="crumb"><a href="index">${t("nav_universities")}</a> / ${escapeHtml(uni.name)}</p>
+      ${coverUrl ? `<div class="uni-cover" style="background-image:url('${escapeHtml(coverUrl)}')" role="img" aria-label="${escapeHtml(uni.name)}"></div>` : ""}
       <div class="uni-header">
         <div>
           <h1>${escapeHtml(uni.name)}</h1>

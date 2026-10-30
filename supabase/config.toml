@@ -3,3 +3,6 @@
 
 [functions.notify-student]
 verify_jwt = true
+
+[functions.delete-student]
+verify_jwt = true

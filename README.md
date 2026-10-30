@@ -72,6 +72,15 @@ Storage) ile yazıldı, framework/build adımı yok.
    adresinde canlıya alınır.
 4. Sonraki her `git push`, otomatik olarak yeni bir deployment tetikler.
 
+## İletişim ayarları ve üniversite kapakları
+
+Supabase SQL Editor’de [`sql/add_site_settings_and_covers.sql`](sql/add_site_settings_and_covers.sql)
+dosyasını bir kez çalıştırın. Sonra yönetim panelinde **İletişim** sekmesinden
+telefon/e-posta/sosyal linkleri düzenleyebilir; üniversite düzenlerken **kapak görseli**
+yükleyebilirsiniz. Katalogda isim + about için İngilizce standart önerilir.
+
+Evrak yüklemeleri PDF/JPG/PNG/WEBP ve en fazla 10 MB ile sınırlıdır; kapaklar en fazla 5 MB.
+
 ## E-posta bildirimleri (öğrenci)
 
 Admin onay/red, durum değişimi, kabul mektubu yükleme ve “eksik evrak hatırlatması”
@@ -89,9 +98,12 @@ Supabase Edge Function ile yapılır.
    npx supabase link --project-ref YOUR_PROJECT_REF
    npx supabase secrets set RESEND_API_KEY=re_xxx FROM_EMAIL="Rota <onboarding@resend.dev>" SITE_URL=https://YOUR-VERCEL-APP.vercel.app
    npx supabase functions deploy notify-student
+   npx supabase functions deploy delete-student
    ```
 4. Admin panelinde bir başvuruyu açıp evrak onaylayın veya
    **Eksik evrak hatırlatması gönder** düğmesine basın.
+   Öğrenci silmek için başvuru detayında veya Kullanıcılar sekmesinde
+   **Öğrenciyi sil** (hesap + başvuru + dosyalar).
 
 Fonksiyon kurulu değilse panel yine çalışır; e-posta gönderilemez ve konsolda uyarı görünür.
 Öğrenci panelindeki **Dosyam özeti** e-postadan bağımsızdır (anında görünür).

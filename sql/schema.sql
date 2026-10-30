@@ -137,7 +137,7 @@ create table public.status_history (
   application_id uuid not null references public.applications(id) on delete cascade,
   from_status text,
   to_status text not null,
-  changed_by uuid references public.profiles(id),
+  changed_by uuid references public.profiles(id) on delete set null,
   note text,
   created_at timestamptz not null default now()
 );
@@ -221,7 +221,7 @@ create table public.documents (
   review_note text,
   uploaded_at timestamptz not null default now(),
   reviewed_at timestamptz,
-  reviewed_by uuid references public.profiles(id),
+  reviewed_by uuid references public.profiles(id) on delete set null,
   unique (application_id, document_type_id)
 );
 
@@ -440,7 +440,7 @@ create table if not exists public.notification_log (
   email_to text,
   sent_at timestamptz,
   error text,
-  created_by uuid references public.profiles(id),
+  created_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
 

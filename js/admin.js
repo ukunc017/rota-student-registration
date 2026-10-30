@@ -69,8 +69,35 @@
       <div class="admin-tabs">
         <button type="button" class="btn ${state.tab === "apps" ? "" : "btn-secondary"} btn-sm" data-tab="apps">${t("admin_nav_applications")}</button>
         <button type="button" class="btn ${state.tab === "unis" ? "" : "btn-secondary"} btn-sm" data-tab="unis">${t("admin_nav_universities")}</button>
+        <button type="button" class="btn ${state.tab === "doctypes" ? "" : "btn-secondary"} btn-sm" data-tab="doctypes">${t("admin_nav_doctypes")}</button>
+        <button type="button" class="btn ${state.tab === "contact" ? "" : "btn-secondary"} btn-sm" data-tab="contact">${t("admin_nav_contact")}</button>
         <button type="button" class="btn ${state.tab === "users" ? "" : "btn-secondary"} btn-sm" data-tab="users">${t("admin_nav_users")}</button>
       </div>`;
+  }
+
+  function personInitials(name, email) {
+    const raw = (name || "").trim();
+    if (raw) {
+      const parts = raw.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      return raw.slice(0, 2).toUpperCase();
+    }
+    const mail = (email || "").trim();
+    return mail ? mail.slice(0, 2).toUpperCase() : "?";
+  }
+
+  function avatarTone(seed) {
+    const tones = ["tone-a", "tone-b", "tone-c", "tone-d", "tone-e"];
+    const s = String(seed || "");
+    let hash = 0;
+    for (let i = 0; i < s.length; i++) hash = (hash + s.charCodeAt(i) * (i + 1)) % 997;
+    return tones[hash % tones.length];
+  }
+
+  function personAvatar(name, email, id) {
+    return `<span class="person-avatar ${avatarTone(id || email || name)}" aria-hidden="true">${esc(
+      personInitials(name, email)
+    )}</span>`;
   }
 
   function bindAdminNav() {
@@ -95,8 +122,108 @@
             return;
           }
         }
+        if (state.tab === "contact") {
+          try {
+            await window.rotaContact.load();
+          } catch (err) {
+            document.getElementById("app").innerHTML = `<p class="empty-state">${esc(err.message)}</p><p class="muted" style="text-align:center">${t("admin_contact_sql_hint")}</p>`;
+            return;
+          }
+        }
         render();
       });
+    });
+  }
+
+  function renderContactSettings() {
+    const c = window.ROTA_CONTACT || window.rotaContact.mergeRow(null);
+    const social = c.social || {};
+    const app = document.getElementById("app");
+    app.innerHTML = `
+      ${adminNav()}
+      <div class="card">
+        <h2 style="margin:0 0 8px">${t("admin_contact_title")}</h2>
+        <p class="muted" style="margin:0 0 16px">${t("admin_contact_lead")}</p>
+        <form id="contact-settings-form">
+          <div class="row">
+            <div class="field">
+              <label>${t("contact_label_company")}</label>
+              <input type="text" id="contact-company" value="${esc(c.company || "")}" />
+            </div>
+            <div class="field">
+              <label>${t("contact_label_email")}</label>
+              <input type="email" id="contact-email" value="${esc(c.email || "")}" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>${t("contact_label_phone")}</label>
+              <input type="text" id="contact-phone" value="${esc(c.phone || "")}" />
+            </div>
+            <div class="field">
+              <label>${t("contact_label_hours")}</label>
+              <input type="text" id="contact-hours" value="${esc(c.hours || "")}" />
+            </div>
+          </div>
+          <div class="field">
+            <label>${t("contact_label_address")}</label>
+            <input type="text" id="contact-address" value="${esc(c.address || "")}" />
+          </div>
+          <div class="field">
+            <label>${t("contact_label_about")}</label>
+            <textarea id="contact-about" rows="4">${esc(c.about || "")}</textarea>
+            <p class="muted" style="margin:6px 0 0;font-size:0.82rem">${t("admin_content_en_hint")}</p>
+          </div>
+          <h3 style="margin:20px 0 10px;font-size:1rem">${t("contact_social_title")}</h3>
+          <div class="row">
+            <div class="field">
+              <label>Instagram</label>
+              <input type="url" id="contact-ig" value="${esc(social.instagram || "")}" placeholder="https://instagram.com/..." />
+            </div>
+            <div class="field">
+              <label>Facebook</label>
+              <input type="url" id="contact-fb" value="${esc(social.facebook || "")}" placeholder="https://facebook.com/..." />
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>X</label>
+              <input type="url" id="contact-tw" value="${esc(social.twitter || "")}" placeholder="https://x.com/..." />
+            </div>
+            <div class="field">
+              <label>LinkedIn</label>
+              <input type="url" id="contact-li" value="${esc(social.linkedin || "")}" placeholder="https://linkedin.com/..." />
+            </div>
+          </div>
+          <button type="submit" class="btn">${t("application_save")}</button>
+          <span class="form-msg" id="contact-save-msg"></span>
+        </form>
+      </div>`;
+    bindAdminNav();
+    document.getElementById("contact-settings-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("contact-save-msg");
+      try {
+        await window.rotaContact.save({
+          company: document.getElementById("contact-company").value.trim(),
+          email: document.getElementById("contact-email").value.trim(),
+          phone: document.getElementById("contact-phone").value.trim(),
+          hours: document.getElementById("contact-hours").value.trim(),
+          address: document.getElementById("contact-address").value.trim(),
+          about: document.getElementById("contact-about").value.trim(),
+          social: {
+            instagram: document.getElementById("contact-ig").value.trim(),
+            facebook: document.getElementById("contact-fb").value.trim(),
+            twitter: document.getElementById("contact-tw").value.trim(),
+            linkedin: document.getElementById("contact-li").value.trim(),
+          },
+        });
+        msg.textContent = t("admin_contact_saved");
+        msg.className = "form-msg success";
+      } catch (err) {
+        msg.textContent = err.message || t("auth_error_generic");
+        msg.className = "form-msg error";
+      }
     });
   }
 
@@ -117,6 +244,14 @@
       <div class="card">
         <h2 style="margin:0 0 8px">${t("admin_users_title")}</h2>
         <p class="muted" style="margin:0 0 16px">${t("admin_users_lead")}</p>
+        <form id="promote-admin-form" class="promote-admin-form">
+          <div class="field" style="margin:0;flex:1;min-width:220px">
+            <label for="promote-admin-email">${t("admin_users_promote_email_label")}</label>
+            <input type="email" id="promote-admin-email" required placeholder="${esc(t("admin_users_promote_email_placeholder"))}" autocomplete="off" />
+          </div>
+          <button type="submit" class="btn btn-sm">${t("admin_users_make_admin")}</button>
+        </form>
+        <p class="muted" style="margin:8px 0 16px;font-size:0.85rem">${t("admin_users_promote_hint")}</p>
         ${
           state.profiles.length === 0
             ? `<p class="empty-state">${t("admin_users_empty")}</p>`
@@ -134,23 +269,36 @@
                     .map((p) => {
                       const isSelf = p.id === state.profile.id;
                       const isAdmin = p.role === "admin";
-                      let action = "";
+                      const actions = [];
                       if (isAdmin) {
                         const canDemote = !isSelf && admins.length > 1;
-                        action = canDemote
-                          ? `<button type="button" class="btn btn-secondary btn-sm" data-set-role="${p.id}" data-role="student">${t("admin_users_make_student")}</button>`
-                          : `<span class="muted">${isSelf ? t("admin_users_you") : t("admin_users_last_admin")}</span>`;
-                      } else {
-                        action = `<button type="button" class="btn btn-sm" data-set-role="${p.id}" data-role="admin">${t("admin_users_make_admin")}</button>`;
+                        if (canDemote) {
+                          actions.push(
+                            `<button type="button" class="btn btn-secondary btn-sm" data-set-role="${p.id}" data-role="student">${t("admin_users_make_student")}</button>`
+                          );
+                        } else {
+                          actions.push(
+                            `<span class="muted">${isSelf ? t("admin_users_you") : t("admin_users_last_admin")}</span>`
+                          );
+                        }
+                      } else if (!isSelf) {
+                        actions.push(
+                          `<button type="button" class="btn btn-danger btn-sm" data-delete-student="${p.id}">${t("admin_delete_student")}</button>`
+                        );
                       }
                       return `
                     <tr>
-                      <td>${esc(p.full_name || "—")}${isSelf ? ` <span class="muted">(${t("admin_users_you")})</span>` : ""}</td>
+                      <td>
+                        <div class="person-cell">
+                          ${personAvatar(p.full_name, p.email, p.id)}
+                          <span>${esc(p.full_name || "—")}${isSelf ? ` <span class="muted">(${t("admin_users_you")})</span>` : ""}</span>
+                        </div>
+                      </td>
                       <td>${esc(p.email || "—")}</td>
                       <td><span class="badge ${isAdmin ? "badge-approved" : "badge-missing"}">${esc(
                         t(isAdmin ? "role_admin" : "role_student")
                       )}</span></td>
-                      <td class="col-actions">${action}</td>
+                      <td class="col-actions">${actions.join(" ") || "—"}</td>
                     </tr>`;
                     })
                     .join("")}
@@ -159,16 +307,49 @@
         }
       </div>`;
     bindAdminNav();
+    document.getElementById("promote-admin-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("promote-admin-email").value.trim().toLowerCase();
+      if (!email) return;
+      const match = state.profiles.find((p) => (p.email || "").toLowerCase() === email);
+      if (!match) {
+        alert(t("admin_users_promote_not_found"));
+        return;
+      }
+      if (match.role === "admin") {
+        alert(t("admin_users_promote_already"));
+        return;
+      }
+      if (!confirm(t("admin_users_confirm_promote"))) return;
+      const { error } = await sb().from("profiles").update({ role: "admin" }).eq("id", match.id);
+      if (error) return alert(error.message);
+      document.getElementById("promote-admin-email").value = "";
+      await loadProfiles();
+      renderUsersList();
+    });
     document.querySelectorAll("[data-set-role]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const id = btn.getAttribute("data-set-role");
-        const role = btn.getAttribute("data-role");
-        const confirmKey = role === "admin" ? "admin_users_confirm_promote" : "admin_users_confirm_demote";
-        if (!confirm(t(confirmKey))) return;
+        if (!confirm(t("admin_users_confirm_demote"))) return;
         btn.disabled = true;
-        const { error } = await sb().from("profiles").update({ role }).eq("id", id);
+        const { error } = await sb().from("profiles").update({ role: "student" }).eq("id", id);
         if (error) {
           alert(error.message);
+          btn.disabled = false;
+          return;
+        }
+        await loadProfiles();
+        renderUsersList();
+      });
+    });
+    document.querySelectorAll("[data-delete-student]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm(t("admin_confirm_delete_student"))) return;
+        btn.disabled = true;
+        const id = btn.getAttribute("data-delete-student");
+        const result = await window.rotaNotify.deleteStudent(id);
+        if (!result.ok) {
+          alert(`${t("admin_delete_student_failed")}: ${result.error || ""}`);
           btn.disabled = false;
           return;
         }
@@ -401,7 +582,15 @@
                     .map(
                       (a) => `
                     <tr data-open-app="${a.id}">
-                      <td>${esc(a.profile?.full_name || "—")}<br/><span class="muted">${esc(a.profile?.email || "")}</span></td>
+                      <td>
+                        <div class="person-cell">
+                          ${personAvatar(a.profile?.full_name, a.profile?.email, a.student_id || a.id)}
+                          <div class="person-cell-text">
+                            <strong>${esc(a.profile?.full_name || "—")}</strong>
+                            <span class="muted">${esc(a.profile?.email || "")}</span>
+                          </div>
+                        </div>
+                      </td>
                       <td>${esc(a.target_university || "—")}<br/><span class="muted">${esc(a.target_program || "")}</span></td>
                       <td>${esc(a.profile?.nationality || "—")}</td>
                       <td>${statusBadge_forApp(a.status)}</td>
@@ -414,11 +603,20 @@
               </table>`
         }
       </div>
-      ${renderDocTypeManager()}
     `;
     window.rotaI18n.applyI18n();
     bindAdminNav();
     attachListHandlers();
+  }
+
+  function renderDocTypesList() {
+    const app = document.getElementById("app");
+    app.innerHTML = `
+      ${adminNav()}
+      ${renderDocTypeManager()}
+    `;
+    bindAdminNav();
+    attachDocTypeHandlers();
   }
 
   function renderUniversityList() {
@@ -429,7 +627,6 @@
         <div class="row">
           <h2 style="margin:0">${t("admin_universities_title")}</h2>
           <div class="toolbar-right">
-            <button type="button" class="btn btn-secondary" id="seed-uni-btn">${t("admin_seed_sample")}</button>
             <button type="button" class="btn" id="add-uni-btn">${t("admin_university_add")}</button>
           </div>
         </div>
@@ -472,19 +669,6 @@
         }
       </div>`;
     bindAdminNav();
-    document.getElementById("seed-uni-btn")?.addEventListener("click", async () => {
-      const btn = document.getElementById("seed-uni-btn");
-      btn.disabled = true;
-      try {
-        const result = await window.rotaSeed.seedSampleUniversities(sb());
-        alert(t("admin_seed_sample_done").replace("{unis}", String(result.totalUnis)).replace("{programs}", String(result.createdPrograms)));
-        await loadUniversities();
-        renderUniversityList();
-      } catch (err) {
-        alert(err.message || t("auth_error_generic"));
-        btn.disabled = false;
-      }
-    });
     document.getElementById("add-uni-btn").addEventListener("click", () => {
       state.editUniversity = {
         id: null,
@@ -502,6 +686,7 @@
         admission_requirements: "",
         city_life: "",
         rota_note: "",
+        cover_path: null,
         active: false,
       };
       state.editPrograms = [];
@@ -550,7 +735,11 @@
       <div class="card spaced-top">
         <h2>${u.id ? t("admin_university_edit") : t("admin_university_add")}</h2>
         <form id="uni-form">
-          ${fieldInput("uni-name", t("admin_field_name"), u.name)}
+          <div class="field">
+            <label>${t("admin_field_name")} <span class="muted">(${t("admin_lang_label_en")})</span></label>
+            <input type="text" id="uni-name" value="${esc(u.name || "")}" />
+            <p class="muted" style="margin:6px 0 0;font-size:0.82rem">${t("admin_content_en_name_hint")}</p>
+          </div>
           ${fieldInput("uni-slug", t("admin_field_slug"), u.slug)}
           <div class="row">
             ${fieldInput("uni-city", t("admin_field_city"), u.city)}
@@ -572,22 +761,51 @@
             ${fieldInput("uni-tuition", t("admin_field_tuition"), u.tuition_range)}
           </div>
           ${fieldInput("uni-housing", t("admin_field_housing"), u.housing)}
-          ${fieldInput("uni-about", t("admin_field_about"), u.about, "textarea")}
+          <div class="field">
+            <label>${t("admin_field_about")} <span class="muted">(${t("admin_lang_label_en")})</span></label>
+            <textarea id="uni-about" rows="4">${esc(u.about || "")}</textarea>
+            <p class="muted" style="margin:6px 0 0;font-size:0.82rem">${t("admin_content_en_about_hint")}</p>
+          </div>
           ${fieldInput("uni-admission", t("admin_field_admission"), u.admission_requirements, "textarea")}
           ${fieldInput("uni-city-life", t("admin_field_city_life"), u.city_life, "textarea")}
           ${fieldInput("uni-rota-note", t("admin_field_rota_note"), u.rota_note, "textarea")}
+          ${
+            u.id
+              ? `<div class="field">
+            <label>${t("admin_uni_cover")}</label>
+            ${
+              u.cover_path
+                ? `<div class="uni-cover-preview" style="background-image:url('${esc(window.rotaFiles.publicMediaUrl(u.cover_path))}')"></div>
+                   <button type="button" class="btn btn-secondary btn-sm" id="remove-cover-btn">${t("admin_uni_cover_remove")}</button>`
+                : `<p class="muted" style="margin:0 0 8px">${t("admin_uni_cover_none")}</p>`
+            }
+            <label class="btn btn-secondary btn-sm" style="display:inline-flex;margin-top:8px">
+              ${t("admin_uni_cover_upload")}
+              <input type="file" id="uni-cover-input" accept="${window.rotaFiles.acceptImages()}" style="display:none" />
+            </label>
+            <p class="muted" style="margin:6px 0 0;font-size:0.82rem">${t("admin_uni_cover_hint")}</p>
+          </div>`
+              : `<p class="muted">${t("admin_uni_cover_save_first")}</p>`
+          }
           ${fieldInput("uni-active", t("admin_field_active"), u.active, "checkbox")}
-          <button type="submit" class="btn">${t("application_save")}</button>
-          <span class="form-msg success" id="uni-save-msg"></span>
+          <div class="row" style="align-items:center;gap:10px;flex-wrap:wrap">
+            <button type="submit" class="btn">${t("application_save")}</button>
+            ${
+              u.id
+                ? `<button type="button" class="btn btn-danger" id="delete-uni-btn">${t("admin_delete_university")}</button>`
+                : ""
+            }
+            <span class="form-msg success" id="uni-save-msg" style="margin:0"></span>
+          </div>
         </form>
       </div>
-      ${
-        u.id
-          ? `<div class="card">
+      <div class="card">
         <h2>${t("admin_programs_title")}</h2>
-        ${state.editPrograms
-          .map(
-            (p, i) => `
+        ${
+          u.id
+            ? `${state.editPrograms
+                .map(
+                  (p, i) => `
           <form class="program-edit" data-program-index="${i}">
             <div class="row">
               ${fieldInput("p-name-" + i, t("admin_field_name"), p.name)}
@@ -614,12 +832,12 @@
             <button type="button" class="btn btn-danger btn-sm" data-del-program="${i}">${t("admin_delete_program")}</button>
             <span class="form-msg success" id="p-msg-${i}"></span>
           </form>`
-          )
-          .join("")}
-        <button type="button" class="btn btn-secondary spaced-top" id="add-program-btn">${t("admin_program_add")}</button>
-      </div>`
-          : ""
-      }`;
+                )
+                .join("")}
+        <button type="button" class="btn btn-secondary spaced-top" id="add-program-btn">${t("admin_program_add")}</button>`
+            : `<p class="muted" style="margin:0">${t("admin_programs_save_uni_first")}</p>`
+        }
+      </div>`;
     bindAdminNav();
     document.getElementById("back-unis").addEventListener("click", async () => {
       state.view = "list";
@@ -630,6 +848,56 @@
     document.getElementById("uni-name").addEventListener("input", (e) => {
       const slug = document.getElementById("uni-slug");
       if (!u.id || !slug.value) slug.value = slugify(e.target.value);
+    });
+    document.getElementById("delete-uni-btn")?.addEventListener("click", async () => {
+      if (!u.id) return;
+      if (!confirm(t("admin_confirm_delete_university"))) return;
+      const btn = document.getElementById("delete-uni-btn");
+      btn.disabled = true;
+      if (u.cover_path) {
+        await sb().storage.from("public-media").remove([u.cover_path]);
+      }
+      const { error } = await sb().from("universities").delete().eq("id", u.id);
+      if (error) {
+        alert(error.message);
+        btn.disabled = false;
+        return;
+      }
+      state.editUniversity = null;
+      state.editPrograms = [];
+      state.view = "list";
+      state.tab = "unis";
+      await loadUniversities();
+      render();
+    });
+    document.getElementById("uni-cover-input")?.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file || !u.id) return;
+      const check = window.rotaFiles.validateImage(file);
+      if (!check.ok) {
+        alert(t(check.errorKey));
+        e.target.value = "";
+        return;
+      }
+      const path = `covers/${u.id}-${Date.now()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
+      const { error: upErr } = await sb().storage.from("public-media").upload(path, file, { upsert: false });
+      if (upErr) return alert(upErr.message);
+      const previous = u.cover_path;
+      const { error } = await sb().from("universities").update({ cover_path: path }).eq("id", u.id);
+      if (error) return alert(error.message);
+      if (previous) await sb().storage.from("public-media").remove([previous]);
+      state.editUniversity = { ...state.editUniversity, cover_path: path };
+      renderUniversityEdit();
+    });
+    document.getElementById("remove-cover-btn")?.addEventListener("click", async () => {
+      if (!u.cover_path) return;
+      if (!confirm(t("admin_uni_cover_remove_confirm"))) return;
+      const previous = u.cover_path;
+      const { error } = await sb().from("universities").update({ cover_path: null }).eq("id", u.id);
+      if (error) return alert(error.message);
+      await sb().storage.from("public-media").remove([previous]);
+      state.editUniversity = { ...state.editUniversity, cover_path: null };
+      renderUniversityEdit();
     });
     document.getElementById("uni-form").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -657,7 +925,10 @@
       } else {
         const { data, error: insErr } = await sb().from("universities").insert(payload).select().single();
         error = insErr;
-        if (!error) state.editUniversity = { ...data, programs: [] };
+        if (!error) {
+          state.editUniversity = { ...data, programs: [] };
+          state.editPrograms = [];
+        }
       }
       msg.textContent = error ? error.message : t("admin_university_saved");
       msg.className = error ? "form-msg error" : "form-msg success";
@@ -739,7 +1010,10 @@
         render();
       });
     });
-    document.getElementById("add-doctype-form").addEventListener("submit", async (e) => {
+  }
+
+  function attachDocTypeHandlers() {
+    document.getElementById("add-doctype-form")?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const labelTr = document.getElementById("new-doctype-tr").value.trim();
       const labelEn = document.getElementById("new-doctype-en").value.trim();
@@ -765,7 +1039,7 @@
       });
       if (error) return alert(error.message);
       await loadDocumentTypesAll();
-      renderList();
+      renderDocTypesList();
     });
     document.querySelectorAll("[data-toggle-doctype]").forEach((btn) => {
       btn.addEventListener("click", async (e) => {
@@ -775,20 +1049,20 @@
         const { error } = await sb().from("document_types").update({ active: !active }).eq("id", id);
         if (error) return alert(error.message);
         await loadDocumentTypesAll();
-        renderList();
+        renderDocTypesList();
       });
     });
     document.querySelectorAll("[data-edit-doctype]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         state.editingDocTypeId = btn.getAttribute("data-edit-doctype");
-        renderList();
+        renderDocTypesList();
       });
     });
     document.querySelectorAll("[data-cancel-edit-doctype]").forEach((btn) => {
       btn.addEventListener("click", () => {
         state.editingDocTypeId = null;
-        renderList();
+        renderDocTypesList();
       });
     });
     document.querySelectorAll("[data-edit-doctype-form]").forEach((form) => {
@@ -814,7 +1088,7 @@
         if (error) return alert(error.message);
         state.editingDocTypeId = null;
         await loadDocumentTypesAll();
-        renderList();
+        renderDocTypesList();
       });
     });
     document.querySelectorAll("[data-delete-doctype]").forEach((btn) => {
@@ -829,7 +1103,7 @@
         if (error) return alert(error.message);
         if (state.editingDocTypeId === id) state.editingDocTypeId = null;
         await loadDocumentTypesAll();
-        renderList();
+        renderDocTypesList();
       });
     });
   }
@@ -900,8 +1174,11 @@
           <label>${t("admin_notes")}</label>
           <textarea id="admin-notes" rows="3">${application.notes || ""}</textarea>
         </div>
-        <button type="button" class="btn" id="save-detail-btn">${t("application_save")}</button>
-        <span class="form-msg success" id="detail-save-msg"></span>
+        <div class="row" style="align-items:center;gap:10px;flex-wrap:wrap">
+          <button type="button" class="btn" id="save-detail-btn">${t("application_save")}</button>
+          <button type="button" class="btn btn-danger" id="delete-student-btn">${t("admin_delete_student")}</button>
+          <span class="form-msg success" id="detail-save-msg" style="margin:0"></span>
+        </div>
       </div>
 
       <div class="card">
@@ -923,7 +1200,7 @@
         }
         <label class="btn spaced-top" style="display:inline-flex">
           ${t("admin_upload_acceptance_letter")}
-          <input type="file" id="acceptance-letter-input" style="display:none" />
+          <input type="file" id="acceptance-letter-input" accept="${window.rotaFiles.acceptDocuments()}" style="display:none" />
         </label>
       </div>
     `;
@@ -948,6 +1225,23 @@
 
     document.getElementById("back-to-list").addEventListener("click", async () => {
       state.view = "list";
+      await loadApplications();
+      render();
+    });
+
+    document.getElementById("delete-student-btn")?.addEventListener("click", async () => {
+      if (!confirm(t("admin_confirm_delete_student"))) return;
+      const btn = document.getElementById("delete-student-btn");
+      btn.disabled = true;
+      const result = await window.rotaNotify.deleteStudent(application.student_id);
+      if (!result.ok) {
+        alert(`${t("admin_delete_student_failed")}: ${result.error || ""}`);
+        btn.disabled = false;
+        return;
+      }
+      state.view = "list";
+      state.detail = null;
+      state.selectedId = null;
       await loadApplications();
       render();
     });
@@ -1053,6 +1347,12 @@
     document.getElementById("acceptance-letter-input").addEventListener("change", async (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      const check = window.rotaFiles.validateDocument(file);
+      if (!check.ok) {
+        alert(t(check.errorKey));
+        e.target.value = "";
+        return;
+      }
       const path = `${application.student_id}/acceptance-letter-${Date.now()}-${file.name}`;
       const { error: upErr } = await sb().storage.from("documents").upload(path, file);
       if (upErr) return alert(upErr.message);
@@ -1079,6 +1379,10 @@
       renderUniversityEdit();
     } else if (state.tab === "unis") {
       renderUniversityList();
+    } else if (state.tab === "doctypes") {
+      renderDocTypesList();
+    } else if (state.tab === "contact") {
+      renderContactSettings();
     } else if (state.tab === "users") {
       renderUsersList();
     } else {

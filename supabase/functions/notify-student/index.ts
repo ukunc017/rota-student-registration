@@ -98,9 +98,16 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    const fromEmail = Deno.env.get("FROM_EMAIL") || "Rota <onboarding@resend.dev>";
-    const siteUrl = Deno.env.get("SITE_URL") || "http://localhost:3000";
+    const resendKey = (Deno.env.get("RESEND_API_KEY") || "").trim();
+    let fromEmail = (Deno.env.get("FROM_EMAIL") || "Rota <onboarding@resend.dev>").trim();
+    // PowerShell bazen tırnakları değere gömebilir: "Rota <...>" → temizle
+    if (
+      (fromEmail.startsWith('"') && fromEmail.endsWith('"')) ||
+      (fromEmail.startsWith("'") && fromEmail.endsWith("'"))
+    ) {
+      fromEmail = fromEmail.slice(1, -1).trim();
+    }
+    const siteUrl = (Deno.env.get("SITE_URL") || "http://localhost:3000").trim().replace(/^=+/, "");
 
     if (!resendKey) {
       return json(503, { ok: false, error: "RESEND_API_KEY not configured" });
@@ -174,6 +181,19 @@ Deno.serve(async (req) => {
       .select("id")
       .single();
 
+    if (logInsert.error) {
+      const msg = logInsert.error.message || "notification_log insert failed";
+      if (/relation .*notification_log.* does not exist/i.test(msg) || logInsert.error.code === "42P01") {
+        return json(503, {
+          ok: false,
+          error: "notification_log missing — run sql/add_notifications.sql in SQL Editor",
+        });
+      }
+      // Tablo varsa ama insert yine de başarısızsa yine mail denemeye devam etme;
+      // log olmadan da mail gidebilsin diye yalnızca uyarı olarak bırakıyoruz.
+      console.warn("notification_log insert:", msg);
+    }
+
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -190,7 +210,10 @@ Deno.serve(async (req) => {
     const resendJson = await resendRes.json().catch(() => ({}));
 
     if (!resendRes.ok) {
-      const errMsg = (resendJson as { message?: string }).message || `Resend ${resendRes.status}`;
+      const errMsg =
+        (resendJson as { message?: string }).message ||
+        (resendJson as { error?: string }).error ||
+        `Resend ${resendRes.status}`;
       if (logInsert.data?.id) {
         await adminClient
           .from("notification_log")

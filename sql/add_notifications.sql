@@ -17,7 +17,7 @@ create table if not exists public.notification_log (
   email_to text,
   sent_at timestamptz,
   error text,
-  created_by uuid references public.profiles(id),
+  created_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
